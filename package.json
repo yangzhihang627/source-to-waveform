@@ -1,0 +1,22 @@
+{
+  "name": "source-to-waveform",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^7.1.2"
+  },
+  "scripts": {
+    "start": "electron . --debug"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.vmovier.cc/scm/thor/source-to-waveform.git"
+  },
+  "keywords": [
+    "electron"
+  ],
+  "author": "杨志航",
+  "license": "ISC"
+}
