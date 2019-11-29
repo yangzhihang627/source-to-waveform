@@ -5,10 +5,17 @@
   "main": "main.js",
   "dependencies": {},
   "devDependencies": {
-    "electron": "^7.1.2"
+    "devtron": "^1.4.0",
+    "electron": "^7.1.2",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.9.0"
   },
   "scripts": {
-    "start": "electron . --debug"
+    "electron": "electron .",
+    "start": "webpack --config webpack.config.js",
+    "dev": "webpack-dev-server",
+    "build": "webpack"
   },
   "repository": {
     "type": "git",

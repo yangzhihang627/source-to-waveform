@@ -6,7 +6,7 @@ const path = require('path')
 const url = require('url')
 
 //判断命令行脚本的第二参数是否含--debug
-const debug = /--debug/.test(process.argv[2]);
+// const debug = /--debug/.test(process.argv[2]);
 
 function createWindow() {
     //创建浏览器窗口
@@ -17,16 +17,15 @@ function createWindow() {
 
     //让浏览器加载index.html
     win.loadURL(url.format({
-        pathname: path.join(__dirname, 'index.html'),
-        protocol: 'file:',
+        // pathname: path.join(__dirname, 'index.html'),
+        // protocol: 'file:',
+        pathname: ('localhost:9000'),
+        protocol: 'http:',
         slashes: true
     }))
 
     //如果是--debug 打开开发者工具
-    if (debug) {
-        win.webContents.openDevTools();
-        // require('devtron').install();
-    }
+    win.webContents.openDevTools()
 
     // 当 window 被关闭，这个事件会被触发。
     win.on('closed', () => {
