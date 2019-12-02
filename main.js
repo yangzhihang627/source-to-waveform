@@ -17,7 +17,7 @@ function createWindow() {
 
     //让浏览器加载index.html
     win.loadURL(url.format({
-        // pathname: path.join(__dirname, 'index.html'),
+        // pathname: path.join(__dirname, 'dist/index.html'),
         // protocol: 'file:',
         pathname: ('localhost:9000'),
         protocol: 'http:',
