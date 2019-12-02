@@ -1,9 +1,9 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-import { Hello } from "./components/Hello";
+import Input from "./components/Input";
 
 ReactDOM.render(
-    <Hello compiler="TypeScript" framework="React" />,
+    <Input name="TypeScript" />,
     document.getElementById("root")
 );
