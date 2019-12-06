@@ -17,11 +17,9 @@ class App extends Component {
       output: '',
       duration: 0
     }
-    this.videoToAudio = this.videoToAudio.bind(this)
-    this.changeSource = this.changeSource.bind(this)
   }
 
-  videoToAudio (filePath) {
+  videoToAudio = (filePath) => {
     // 素材位置
     const filePwd = filePath.slice(0, filePath.lastIndexOf('/'));
     const fileName = filePath.slice(filePath.lastIndexOf('/') + 1, filePath.lastIndexOf('.'));
@@ -43,31 +41,29 @@ class App extends Component {
         command.input(filePath)
         .noVideo().audioCodec('copy')
         .on('start', () => {
-          console.log('start')
           startTime = Date.now();
+          console.log('start-process:', startTime);
         })
         .on('error', function(err, stdout, stderr) {
           alert('转化失败: ', err.message);
         })
         .on('end', () => {
-          console.log('end')
           endTime = Date.now();
+          console.log('end-process:', endTime);
           this.setState({
             output: outputPath,
             duration: (endTime - startTime)
           })
         }).output(outputPath).run()
-        
       } else {
         alert('未找到音频流！');
       }
     })
   }
 
-  changeSource (evt) {
-      const { target } = evt;
+  changeSource = (evt) => {
+      const { target: { files } } = evt;
       let file;
-      const files = target.files;
       if (files.length > 0) {
         this.setState({
           entry: '',
