@@ -2,6 +2,7 @@ const webpack = require('webpack');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { spawn } = require('child_process');
+const nodeExternals = require('webpack-node-externals');
 
 // Config directories
 const SRC_DIR = path.resolve(__dirname, 'src');
@@ -25,6 +26,10 @@ module.exports = {
         include: defaultInclude
       },
       {
+        test: /\.scss$/,
+        loaders: ['style-loader', 'css-loader', 'sass-loader']
+      },
+      {
         test: /\.jsx?$/,
         use: [{ loader: 'babel-loader' }],
         include: defaultInclude
@@ -41,6 +46,7 @@ module.exports = {
       }
     ]
   },
+  externals: [nodeExternals()],
   target: 'electron-renderer',
   plugins: [
     new HtmlWebpackPlugin(),
