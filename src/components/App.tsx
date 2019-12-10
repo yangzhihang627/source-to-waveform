@@ -5,6 +5,8 @@ const ffprobePath = require('@ffprobe-installer/ffprobe').path;
 ffmpeg.setFfmpegPath(ffmpegPath);
 ffmpeg.setFfprobePath(ffprobePath);
 
+// const AudioSVGWaveform = require('audio-waveform-svg-path');
+
 import './App.scss'
 
 interface AppState {
@@ -25,15 +27,25 @@ export default class App extends React.PureComponent<AppProps, AppState> {
   }
 
   private inputRef = React.createRef<HTMLInputElement>();
+  private pathRef = React.createRef<HTMLDivElement>();
 
-  videoToAudio = (filePath: string) => {
+  // audio2Svg = (filePath: string) => {
+  //   const trackWaveform = new AudioSVGWaveform({url: filePath});
+  //   trackWaveform.loadFromUrl().then(() => {
+  //     const path = trackWaveform.getPath();
+  //     this.pathRef.current.setAttribute('d', path);
+  //   });
+  // }
+
+  video2Audio = (filePath: string) => {
     // 素材位置
     const filePwd = filePath.slice(0, filePath.lastIndexOf('/'));
     const fileName = filePath.slice(filePath.lastIndexOf('/') + 1, filePath.lastIndexOf('.'));
     ffmpeg.ffprobe(filePath, (err: any, metadata: any) => {
       if (!err) {
-        const audioType = metadata.streams.filter((item: any) => item.codec_type === 'audio')[0].codec_name;
-        
+        const audioType = metadata.streams.filter(
+            (item: any) => item.codec_type === 'audio'
+          )[0].codec_name;
         let startTime: number = 0;
         let endTime: number = 0;
         let extension: string = '';
@@ -45,13 +57,13 @@ export default class App extends React.PureComponent<AppProps, AppState> {
             extension = audioType;
         }
         const outputPath = `${filePwd}/${fileName}-${Date.now()}.${extension}`;
-
         const command = ffmpeg()
         command.input(filePath)
         .noVideo().audioCodec('copy')
-        .on('start', () => {
+        .on('start', (commandLine: string) => {
           startTime = Date.now();
           console.log('start-process:', startTime);
+          console.log('Spawned Ffmpeg with command: '+ commandLine);
         })
         .on('error', function(err: any, stdout: any, stderr: any) {
           alert(`转化失败: ${err.message}`);
@@ -63,6 +75,7 @@ export default class App extends React.PureComponent<AppProps, AppState> {
             output: outputPath,
             duration: (endTime - startTime)
           })
+          // this.audio2Svg(outputPath);
         }).output(outputPath).run()
       } else {
         alert('未找到音频流！');
@@ -89,7 +102,7 @@ export default class App extends React.PureComponent<AppProps, AppState> {
             }, () => {
               this.inputRef.current.value  = '';
             });
-            this.videoToAudio(filePath);
+            this.video2Audio(filePath);
         })
       } else {
         alert('上传视频失败')
@@ -115,6 +128,7 @@ export default class App extends React.PureComponent<AppProps, AppState> {
             转化时间：
             <input className="path" type="input" value={duration} readOnly />
           </div>
+          <div ref={this.pathRef}></div>
       </div>
     );
   }
