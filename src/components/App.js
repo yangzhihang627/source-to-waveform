@@ -143,7 +143,7 @@ class App extends Component {
             output: outputPath,
             duration: (endTime - startTime)
           })
-          // this.audio2Svg(outputName);
+          this.audio2Svg(outputName);
         }).output(outputPath).run()
       } else {
         alert('未找到音频流！');

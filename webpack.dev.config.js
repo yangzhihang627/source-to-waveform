@@ -13,6 +13,9 @@ const defaultInclude = [SRC_DIR];
 
 module.exports = {
   entry: SRC_DIR + '/index.js',
+  // entry: {
+  //   app: ['@babel/polyfill', SRC_DIR + '/index.js']
+  // },
   output: {
     path: OUTPUT_DIR,
     publicPath: '/',
