@@ -19,11 +19,12 @@ class App extends Component {
     this.state = {
       entry: '',
       output: '',
-      duration: 0,
+      videoDuration: 0,
       audioUrl: '',
       audioProgress: 0,
       fullPath: '',
       diffPath: '',
+      waveformDuration: 0
     }
   }
 
@@ -31,11 +32,9 @@ class App extends Component {
     if (this.state.audioUrl) {
       this.loadAudioFromUrl(this.state.audioUrl);
     }
-
     this.player.addEventListener('timeupdate', () => {
       const currentTime = this.player.currentTime;
       const duration = this.player.duration;
-
       this.setState({audioProgress: ((currentTime / duration) * 100).toPrecision(4)});
     });
   }
@@ -46,9 +45,9 @@ class App extends Component {
     }
 
     const trackWaveform = new AudioSVGWaveform({url});
-
+    const startTime = Date.now();
     trackWaveform.loadFromUrl().then(() => {
-      const fullPath = trackWaveform.getPath();
+      const {d, timestamp: endTime} = trackWaveform.getPath();
       
       // const leftPath = trackWaveform.getPath(
       //     (channels, channel, index) => channels.concat(index === 0 ? channel : []),
@@ -59,30 +58,30 @@ class App extends Component {
       //     []
       // );
       
-      // console.log('full:', fullPath)
-      const diffPath = trackWaveform.getPath(
-          (channels, channel) => {
-              const prevChannel = channels[0];
-              const length = channel.length;
-              const outputChannel = [];
-              if (prevChannel) {
-                  for (let i = 0; i < length; i++) {
-                      // flip phase of right channel
-                      outputChannel[i] = (channel[i] - prevChannel[i]);
-                  }
+      // const diffPath = trackWaveform.getPath(
+      //     (channels, channel) => {
+      //         const prevChannel = channels[0];
+      //         const length = channel.length;
+      //         const outputChannel = [];
+      //         if (prevChannel) {
+      //             for (let i = 0; i < length; i++) {
+      //                 // flip phase of right channel
+      //                 outputChannel[i] = (channel[i] - prevChannel[i]);
+      //             }
+      //             channels[0] = outputChannel;
+      //         } else {
+      //             channels.push(channel);
+      //         }
+      //         return channels;
+      //     },
+      //     []
+      // );
 
-                  channels[0] = outputChannel;
-              } else {
-                  channels.push(channel);
-              }
-
-              return channels;
-          },
-          []
-      );
-      // console.log('diff', diffPath)
-
-      this.setState({audioUrl: url, fullPath, diffPath});
+      this.setState({
+        audioUrl: url,
+        fullPath: d,
+        waveformDuration: (endTime - startTime)
+      });
     });
   }
 
@@ -110,7 +109,7 @@ class App extends Component {
 
   video2Audio = (filePath) => {
     // 素材位置
-    const filePwd = filePath.slice(0, filePath.lastIndexOf('/'));
+    // const filePwd = filePath.slice(0, filePath.lastIndexOf('/'));
     const fileName = filePath.slice(filePath.lastIndexOf('/') + 1, filePath.lastIndexOf('.'));
     ffmpeg.ffprobe(filePath, (err, metadata) => {
       if (!err) {
@@ -135,14 +134,14 @@ class App extends Component {
           console.log('start-process:', startTime);
         })
         .on('error', function(err, stdout, stderr) {
-          alert('转化失败: ', typeof err);
+          alert(`转化失败: "${err.message}"`);
         })
         .on('end', () => {
           endTime = Date.now();
           console.log('end-process:', endTime);
           this.setState({
             output: outputPath,
-            duration: (endTime - startTime)
+            videoDuration: (endTime - startTime)
           })
           this.audio2Svg(outputName);
         }).output(outputPath).run()
@@ -159,14 +158,15 @@ class App extends Component {
         this.setState({
           entry: '',
           output: '',
-          duration: 0,
+          videoDuration: 0,
           audioUrl: '',
           audioProgress: 0,
           fullPath: '',
           diffPath: '',
+          waveformDuration: 0,
         }, () => {
           file = files[0];
-            console.log(file);
+            // console.log(file);
             // 素材路径
             const filePath = file.path;
             this.setState({
@@ -184,10 +184,10 @@ class App extends Component {
     const { 
       entry,
       output,
-      duration,
+      videoDuration,
       audioUrl,
       fullPath,
-      diffPath
+      waveformDuration
      } = this.state
     return (
       <div>
@@ -203,20 +203,24 @@ class App extends Component {
             <input className="path" type="input" value={output} readOnly />
           </div>
           <div className="wrapper">
-            转化时间：
-            <input className="path" type="input" value={`${duration}ms`} readOnly />
+            分离音频时间：
+            <input className="path" type="input" value={`${videoDuration}ms`} readOnly />
+          </div>
+          <div className="wrapper">
+            生产数据时间：
+            <input className="path" type="input" value={`${waveformDuration}ms`} readOnly />
           </div>
           <audio
               className="player"
               ref={component => { this.player = component; }}
-              src={fullPath && diffPath ? audioUrl : undefined}
-              autoPlay
+              src={fullPath ? audioUrl : undefined}
+              // autoPlay
               controls
           >
               You browser doesn't support <code>audio</code> element.
           </audio>
           <div className="waveforms">
-            {this._renderSVGWaveform([fullPath, diffPath])}
+            {this._renderSVGWaveform([fullPath])}
           </div>
       </div>
     );
