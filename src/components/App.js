@@ -44,38 +44,13 @@ class App extends Component {
       return;
     }
 
-    const trackWaveform = new AudioSVGWaveform({url});
+    const trackWaveform = new AudioSVGWaveform({
+      sampleRate: 3000,
+      url
+    });
     const startTime = Date.now();
     trackWaveform.loadFromUrl().then(() => {
       const {d, timestamp: endTime} = trackWaveform.getPath();
-      
-      // const leftPath = trackWaveform.getPath(
-      //     (channels, channel, index) => channels.concat(index === 0 ? channel : []),
-      //     []
-      // );
-      // const rightPath = trackWaveform.getPath(
-      //     (channels, channel, index) => channels.concat(index === 1 ? channel : []),
-      //     []
-      // );
-      
-      // const diffPath = trackWaveform.getPath(
-      //     (channels, channel) => {
-      //         const prevChannel = channels[0];
-      //         const length = channel.length;
-      //         const outputChannel = [];
-      //         if (prevChannel) {
-      //             for (let i = 0; i < length; i++) {
-      //                 // flip phase of right channel
-      //                 outputChannel[i] = (channel[i] - prevChannel[i]);
-      //             }
-      //             channels[0] = outputChannel;
-      //         } else {
-      //             channels.push(channel);
-      //         }
-      //         return channels;
-      //     },
-      //     []
-      // );
 
       this.setState({
         audioUrl: url,
@@ -131,14 +106,14 @@ class App extends Component {
         .noVideo().audioCodec('copy')
         .on('start', () => {
           startTime = Date.now();
-          console.log('start-process:', startTime);
+          // console.log('start-process:', startTime);
         })
         .on('error', function(err, stdout, stderr) {
           alert(`转化失败: "${err.message}"`);
         })
         .on('end', () => {
           endTime = Date.now();
-          console.log('end-process:', endTime);
+          // console.log('end-process:', endTime);
           this.setState({
             output: outputPath,
             videoDuration: (endTime - startTime)
