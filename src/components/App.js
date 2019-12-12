@@ -99,7 +99,7 @@ class App extends Component {
           alert(`转化失败: "${err.message}"`);
         })
         .on('end', () => {
-          console.log('end', this.state.count)
+          // console.log('end', this.state.count)
           this.setState({
             videoDuration: (Date.now() - startTime)
           })
@@ -126,7 +126,7 @@ class App extends Component {
     const outputPath = `${OUTPUT_DIR}/${outputName}`;
     // console.log('.....',length)
     if (count < length) {
-      console.log(1234, 60 * count, 60* minute)
+      // console.log(1234, 60 * count, 60* minute)
       command.output(outputPath)
       .seek(60 * count)
       .duration(60 * minute)
@@ -138,19 +138,6 @@ class App extends Component {
     } else {
       command.run();
     }
-    // command.seek(0)
-    // .duration(60)
-    // .output(`${outputPath}-1.aac`)
-    // command
-    // .output(`${outputPath}-2.aac`)
-    // // .duration(60)
-    // .seek(0)
-    // .duration(60)
-    // .output(`${outputPath}-3.aac`)
-    // .seek(60)
-    // .duration(60)
-    // // .duration(60)
-    // .run()
   }
 
   changeSource = (evt) => {
