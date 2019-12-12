@@ -1,4 +1,4 @@
-import '../assets/css/App.css';
+import './App.scss'
 import React, { Component } from 'react';
 import ffmpeg from 'fluent-ffmpeg';
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
@@ -11,8 +11,6 @@ const path = require('path');
 const process = require('process');
 const OUTPUT_DIR = path.resolve(process.cwd(), 'dist');
 
-import './App.scss'
-
 class App extends Component {
   constructor (props) {
     super(props)
@@ -24,7 +22,9 @@ class App extends Component {
       audioProgress: 0,
       fullPath: '',
       diffPath: '',
-      waveformDuration: 0
+      waveformDuration: 0,
+      minute: 1,
+      count: 0
     }
   }
 
@@ -88,9 +88,23 @@ class App extends Component {
     const fileName = filePath.slice(filePath.lastIndexOf('/') + 1, filePath.lastIndexOf('.'));
     ffmpeg.ffprobe(filePath, (err, metadata) => {
       if (!err) {
-        const audioType = metadata.streams.filter((item) => item.codec_type === 'audio')[0].codec_name;
-        
-        let startTime, endTime, extension;
+        const audioMsg = metadata.streams.filter((item) => item.codec_type === 'audio')[0];
+        const { codec_name: audioType, duration: audioDuration} = audioMsg;
+        const length = Math.ceil(audioDuration/60);
+        const startTime = Date.now();
+
+        const command = ffmpeg(filePath)
+        command.noVideo().audioCodec('copy')
+        .on('error', function(err, stdout, stderr) {
+          alert(`转化失败: "${err.message}"`);
+        })
+        .on('end', () => {
+          console.log('end', this.state.count)
+          this.setState({
+            videoDuration: (Date.now() - startTime)
+          })
+        });
+        let extension;
         switch (audioType){
           case 'vorbis':
             extension = 'ogg';
@@ -98,32 +112,45 @@ class App extends Component {
           default:
             extension = audioType;
         }
-        const outputName = `${fileName}-${Date.now()}.${extension}`;
-        const outputPath = `${OUTPUT_DIR}/${outputName}`;
-
-        const command = ffmpeg()
-        command.input(filePath)
-        .noVideo().audioCodec('copy')
-        .on('start', () => {
-          startTime = Date.now();
-          // console.log('start-process:', startTime);
-        })
-        .on('error', function(err, stdout, stderr) {
-          alert(`转化失败: "${err.message}"`);
-        })
-        .on('end', () => {
-          endTime = Date.now();
-          // console.log('end-process:', endTime);
-          this.setState({
-            output: outputPath,
-            videoDuration: (endTime - startTime)
-          })
-          this.audio2Svg(outputName);
-        }).output(outputPath).run()
+        
+        this._splitAudio(command, fileName, extension, length);
       } else {
         alert('未找到音频流！');
       }
     })
+  }
+
+  _splitAudio = (command, fileName, extension, length) => {
+    const { minute, count } = this.state;
+    const outputName = `${fileName}-${Date.now()}.${extension}`;
+    const outputPath = `${OUTPUT_DIR}/${outputName}`;
+    // console.log('.....',length)
+    if (count < length) {
+      console.log(1234, 60 * count, 60* minute)
+      command.output(outputPath)
+      .seek(60 * count)
+      .duration(60 * minute)
+      this.setState({
+        count: count + 1
+      }, () => {
+        this._splitAudio(command, fileName, extension, length);
+      })
+    } else {
+      command.run();
+    }
+    // command.seek(0)
+    // .duration(60)
+    // .output(`${outputPath}-1.aac`)
+    // command
+    // .output(`${outputPath}-2.aac`)
+    // // .duration(60)
+    // .seek(0)
+    // .duration(60)
+    // .output(`${outputPath}-3.aac`)
+    // .seek(60)
+    // .duration(60)
+    // // .duration(60)
+    // .run()
   }
 
   changeSource = (evt) => {
@@ -155,6 +182,7 @@ class App extends Component {
         alert('上传视频失败')
       }
   }
+
   render() {
     const { 
       entry,
