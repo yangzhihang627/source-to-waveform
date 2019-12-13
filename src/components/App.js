@@ -218,10 +218,10 @@ class App extends Component {
             输入文件：
             <input className="path" type="input" value={entry} readOnly />
           </div>
-          <div className="wrapper">
+          {/* <div className="wrapper">
             输出文件：
             <input className="path" type="input" value={output} readOnly />
-          </div>
+          </div> */}
           <div className="wrapper">
             一段svg时间：
             <input className="path" type="input" value={`${firstDuration}ms`} readOnly />
@@ -230,7 +230,7 @@ class App extends Component {
             全部svg时间：
             <input className="path" type="input" value={`${fullDuration}ms`} readOnly />
           </div>
-          <audio
+          {/* <audio
               className="player"
               ref={component => { this.player = component; }}
               // src={fullPaths.length !== 0 ? audioUrl : undefined}
@@ -238,7 +238,7 @@ class App extends Component {
               controls
           >
               You browser doesn't support <code>audio</code> element.
-          </audio>
+          </audio> */}
           <div className="waveforms">
             {this._renderSVGWaveform()}
           </div>
