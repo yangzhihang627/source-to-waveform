@@ -18,12 +18,12 @@ class App extends Component {
     this.state = {
       entry: '',
       output: '',
-      videoDuration: 0,
+      firstDuration: 0,
       audioUrl: '',
       audioProgress: 0,
       fullPaths: [],
       diffPath: '',
-      waveformDuration: 0,
+      fullDuration: 0,
       minute: 3,
       count: 0,
       section: 1
@@ -52,12 +52,12 @@ class App extends Component {
       switch (count) {
         case 0: // 第一段svg生成时间
             this.setState({
-              videoDuration: (endTime - startTime)
+              firstDuration: (endTime - startTime)
             });
             break;
         case section - 1: //全部svg生成时间
             this.setState({
-              waveformDuration: (endTime - startTime)
+              fullDuration: (endTime - startTime)
             });
             break;
 
@@ -156,12 +156,12 @@ class App extends Component {
         this.setState({ // 重选时还原所有默认值
           entry: '',
           output: '',
-          videoDuration: 0,
+          firstDuration: 0,
           audioUrl: '',
           audioProgress: 0,
           fullPaths: [],
           diffPath: '',
-          waveformDuration: 0,
+          fullDuration: 0,
           count: 0,
           section: 1
         }, () => {
@@ -184,9 +184,9 @@ class App extends Component {
     const { 
       entry,
       output,
-      videoDuration,
+      firstDuration,
       audioUrl,
-      waveformDuration
+      fullDuration
      } = this.state
     return (
       <div>
@@ -203,11 +203,11 @@ class App extends Component {
           </div>
           <div className="wrapper">
             一段svg时间：
-            <input className="path" type="input" value={`${videoDuration}ms`} readOnly />
+            <input className="path" type="input" value={`${firstDuration}ms`} readOnly />
           </div>
           <div className="wrapper">
             全部svg时间：
-            <input className="path" type="input" value={`${waveformDuration}ms`} readOnly />
+            <input className="path" type="input" value={`${fullDuration}ms`} readOnly />
           </div>
           <audio
               className="player"
