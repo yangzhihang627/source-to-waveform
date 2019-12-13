@@ -26,7 +26,8 @@ class App extends Component {
       fullDuration: 0,
       minute: 3,
       count: 0,
-      section: 1
+      section: 1,
+      outputDirName: ''
     }
   }
 
@@ -41,6 +42,22 @@ class App extends Component {
   //   });
   // }
 
+  delDir = path => {
+    let files = [];
+    if(fs.existsSync(path)){
+      files = fs.readdirSync(path);
+      files.forEach((file, index) => {
+        let curPath = path + "/" + file;
+        if(fs.statSync(curPath).isDirectory()){
+          this.delDir(curPath); //递归删除文件夹
+        } else {
+          fs.unlinkSync(curPath); //删除文件
+        }
+      });
+      fs.rmdirSync(path);
+    }
+  }
+
   audio2Svg = (url, startTime) => {
     const { count, fullPaths, section } = this.state
     const trackWaveform = new AudioSVGWaveform({
@@ -48,19 +65,20 @@ class App extends Component {
       url
     });
     trackWaveform.loadFromUrl().then(() => {
-      const {d, timestamp: endTime} = trackWaveform.getPath();
+      const { outputDirName } = this.state
+      const { d, timestamp: endTime } = trackWaveform.getPath();
       switch (count) {
+        case section - 1: //全部svg生成时间
+            this.setState({
+              fullDuration: (endTime - startTime)
+            });
+            this.delDir(outputDirName);
+            break;
         case 0: // 第一段svg生成时间
             this.setState({
               firstDuration: (endTime - startTime)
             });
             break;
-        case section - 1: //全部svg生成时间
-            this.setState({
-              fullDuration: (endTime - startTime)
-            });
-            break;
-
       }
       fullPaths.push(d)
       this.setState({
@@ -97,8 +115,11 @@ class App extends Component {
     // 素材位置
     const fileName = filePath.slice(filePath.lastIndexOf('/') + 1, filePath.lastIndexOf('.'));
     const startTime = Date.now(); //开始计时
-    const outputDirName = `${fileName}-${startTime}`;
-    fs.mkdirSync(`${OUTPUT_DIR}/${outputDirName}`);
+    const outputDirName = `${OUTPUT_DIR}/${fileName}-${startTime}`;
+    fs.mkdirSync(outputDirName);
+    this.setState({
+      outputDirName
+    })
     ffmpeg.ffprobe(filePath, (err, metadata) => {
       if (!err) {
         const audioMsg = metadata.streams.filter((item) => item.codec_type === 'audio')[0];
@@ -135,7 +156,6 @@ class App extends Component {
         alert(`转化失败: "${err.message}"`);
       })
       .on('end', () => {
-        console.log('end12345')
         this.audio2Svg(outputUrl, startTime)
         this.setState({
           count: count + 1
@@ -163,7 +183,8 @@ class App extends Component {
           diffPath: '',
           fullDuration: 0,
           count: 0,
-          section: 1
+          section: 1,
+          outputDirName: ''
         }, () => {
           file = files[0];
             // 素材路径
