@@ -21,11 +21,12 @@ class App extends Component {
       videoDuration: 0,
       audioUrl: '',
       audioProgress: 0,
-      fullPath: '',
+      fullPaths: [],
       diffPath: '',
       waveformDuration: 0,
-      minute: 1,
-      count: 0
+      minute: 3,
+      count: 0,
+      section: 1
     }
   }
 
@@ -40,11 +41,8 @@ class App extends Component {
   //   });
   // }
 
-  audio2Svg = (url, length, startTime) => {
-    if (!url) {
-      return;
-    }
-    const { count, fullPath } = this.state
+  audio2Svg = (url, startTime) => {
+    const { count, fullPaths, section } = this.state
     const trackWaveform = new AudioSVGWaveform({
       sampleRate: 3000,
       url
@@ -57,34 +55,36 @@ class App extends Component {
               videoDuration: (endTime - startTime)
             });
             break;
-        case length - 1: //全部svg生成时间
+        case section - 1: //全部svg生成时间
             this.setState({
               waveformDuration: (endTime - startTime)
             });
             break;
 
       }
+      fullPaths.push(d)
       this.setState({
         // audioUrl: url,
-        fullPath: fullPath + d,
+        fullPaths,
       });
     });
   }
 
-  _renderSVGWaveform(paths) {
-    const {audioProgress} = this.state;
-
+  _renderSVGWaveform() {
+    const { fullPaths, section } = this.state;
+    const persent = 1/section * 100
     return (
         <div className="audio-graph">
-            {paths.filter(Boolean).map((path, index) => (
+            {fullPaths.map((path, index) => (
                 <svg
-                    className={`waveform waveform_${index}`}
+                    className="waveform"
+                    style={{width: `${persent}%`}}
                     viewBox="0 -1 6000 2"
                     preserveAspectRatio="none"
                     key={index}
                 >
                     <g>
-                        <path className={`waveform__path waveform__path_${index}`} d={path} />
+                        <path className="waveform__path" d={path} />
                     </g>
                 </svg>
             ))}
@@ -95,7 +95,6 @@ class App extends Component {
 
   video2Audio = (filePath) => {
     // 素材位置
-    // const filePwd = filePath.slice(0, filePath.lastIndexOf('/'));
     const fileName = filePath.slice(filePath.lastIndexOf('/') + 1, filePath.lastIndexOf('.'));
     const startTime = Date.now(); //开始计时
     const outputDirName = `${fileName}-${startTime}`;
@@ -104,7 +103,6 @@ class App extends Component {
       if (!err) {
         const audioMsg = metadata.streams.filter((item) => item.codec_type === 'audio')[0];
         const { codec_name: audioType, duration: audioDuration} = audioMsg;
-        const length = Math.ceil(audioDuration/60 * this.state.minute); //分割的总份数
         let extension;
         switch (audioType){
           case 'vorbis':
@@ -113,53 +111,41 @@ class App extends Component {
           default:
             extension = audioType;
         }
-
-        // const command = ffmpeg()  // 开始ffmpeg设置及事件绑定
-        // command.input(filePath).noVideo().audioCodec('copy')
-        // .on('error', function(err, stdout, stderr) {
-        //   alert(`转化失败: "${err.message}"`);
-        // })
-        // .on('end', () => {
-        //   this.setState({
-        //     videoDuration: (Date.now() - startTime)
-        //   })
-        // });
-        
-        this._splitAudio(filePath, fileName, extension, length, startTime); // 开始分割音频文件
+        this.setState({
+          section: Math.ceil(audioDuration / (60 * this.state.minute)) //分割的总份数
+        }, () => {
+          this._splitAudio(filePath, fileName, extension, startTime); // 开始分割音频文件
+        });
       } else {
         alert('未找到音频流！');
       }
     })
   }
 
-  _splitAudio = (filePath, fileName, extension, length, startTime) => {
-    const { minute, count } = this.state;
+  _splitAudio = (filePath, fileName, extension, startTime) => {
+    const { minute, count, section } = this.state;
     const outputName = `${fileName}-${Date.now()}.${extension}`;
     const outputUrl = `${fileName}-${startTime}/${outputName}`;
     const outputPath = `${OUTPUT_DIR}/${outputUrl}`;
     const unit = 60 * minute; // 分割单位
-    if (count < length) { // 计数器小于长度时持续分割
-      // console.log(1234, unit * count, unit)
+    if (count < section) { // 计数器小于长度时持续分割
       const command = ffmpeg()  // 开始ffmpeg设置及事件绑定
       command.input(filePath).noVideo().audioCodec('copy')
       .on('error', function(err, stdout, stderr) {
         alert(`转化失败: "${err.message}"`);
       })
       .on('end', () => {
-        this.audio2Svg(outputUrl, length, startTime)
+        console.log('end12345')
+        this.audio2Svg(outputUrl, startTime)
         this.setState({
           count: count + 1
         }, () => {
-          this._splitAudio(filePath, fileName, extension, length, startTime);
+          this._splitAudio(filePath, fileName, extension, startTime);
         })
       }).output(outputPath)
       .seek(unit * count)
       .duration(unit)
       .run()
-    } else { // 否则记录生成时间
-      // this.setState({
-      //   videoDuration: (Date.now() - startTime)
-      // })
     }
   }
 
@@ -173,10 +159,11 @@ class App extends Component {
           videoDuration: 0,
           audioUrl: '',
           audioProgress: 0,
-          fullPath: '',
+          fullPaths: [],
           diffPath: '',
           waveformDuration: 0,
-          count: 0
+          count: 0,
+          section: 1
         }, () => {
           file = files[0];
             // 素材路径
@@ -199,7 +186,6 @@ class App extends Component {
       output,
       videoDuration,
       audioUrl,
-      fullPath,
       waveformDuration
      } = this.state
     return (
@@ -226,14 +212,14 @@ class App extends Component {
           <audio
               className="player"
               ref={component => { this.player = component; }}
-              // src={fullPath ? audioUrl : undefined}
+              // src={fullPaths.length !== 0 ? audioUrl : undefined}
               // autoPlay
               controls
           >
               You browser doesn't support <code>audio</code> element.
           </audio>
           <div className="waveforms">
-            {this._renderSVGWaveform([fullPath])}
+            {this._renderSVGWaveform()}
           </div>
       </div>
     );
