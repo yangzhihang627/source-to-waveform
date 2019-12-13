@@ -1,4 +1,4 @@
-import '../assets/css/App.css';
+import './App.scss'
 import React, { Component } from 'react';
 import ffmpeg from 'fluent-ffmpeg';
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
@@ -10,8 +10,6 @@ import AudioSVGWaveform from 'audio-waveform-svg-path';
 const path = require('path');
 const process = require('process');
 const OUTPUT_DIR = path.resolve(process.cwd(), 'dist');
-
-import './App.scss'
 
 class App extends Component {
   constructor (props) {
