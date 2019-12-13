@@ -90,20 +90,8 @@ class App extends Component {
       if (!err) {
         const audioMsg = metadata.streams.filter((item) => item.codec_type === 'audio')[0];
         const { codec_name: audioType, duration: audioDuration} = audioMsg;
-        const length = Math.ceil(audioDuration/60);
-        const startTime = Date.now();
-
-        const command = ffmpeg(filePath)
-        command.noVideo().audioCodec('copy')
-        .on('error', function(err, stdout, stderr) {
-          alert(`转化失败: "${err.message}"`);
-        })
-        .on('end', () => {
-          // console.log('end', this.state.count)
-          this.setState({
-            videoDuration: (Date.now() - startTime)
-          })
-        });
+        const length = Math.ceil(audioDuration/60 * this.state.minute); //分割的总份数
+        const startTime = Date.now(); //开始计时
         let extension;
         switch (audioType){
           case 'vorbis':
@@ -112,8 +100,19 @@ class App extends Component {
           default:
             extension = audioType;
         }
+
+        const command = ffmpeg()  // 开始ffmpeg设置及事件绑定
+        command.input(filePath).noVideo().audioCodec('copy')
+        .on('error', function(err, stdout, stderr) {
+          alert(`转化失败: "${err.message}"`);
+        })
+        .on('end', () => {
+          this.setState({
+            videoDuration: (Date.now() - startTime)
+          })
+        });
         
-        this._splitAudio(command, fileName, extension, length);
+        this._splitAudio(command, fileName, extension, length); // 可是分割音频文件
       } else {
         alert('未找到音频流！');
       }
@@ -124,18 +123,18 @@ class App extends Component {
     const { minute, count } = this.state;
     const outputName = `${fileName}-${Date.now()}.${extension}`;
     const outputPath = `${OUTPUT_DIR}/${outputName}`;
-    // console.log('.....',length)
-    if (count < length) {
-      // console.log(1234, 60 * count, 60* minute)
+    const unit = 60 * minute; // 分割单位
+    if (count < length) { // 计数器小于长度时持续分割
+      // console.log(1234, unit * count, unit)
       command.output(outputPath)
-      .seek(60 * count)
-      .duration(60 * minute)
+      .seek(unit * count)
+      .duration(unit)
       this.setState({
         count: count + 1
       }, () => {
         this._splitAudio(command, fileName, extension, length);
       })
-    } else {
+    } else { // 否则生成所以分割好的文件
       command.run();
     }
   }
@@ -144,7 +143,7 @@ class App extends Component {
       const { target: { files } } = evt;
       let file;
       if (files.length > 0) {
-        this.setState({
+        this.setState({ // 重选时还原所有默认值
           entry: '',
           output: '',
           videoDuration: 0,
@@ -153,9 +152,9 @@ class App extends Component {
           fullPath: '',
           diffPath: '',
           waveformDuration: 0,
+          count: 0
         }, () => {
           file = files[0];
-            // console.log(file);
             // 素材路径
             const filePath = file.path;
             this.setState({
