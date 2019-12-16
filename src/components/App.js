@@ -24,23 +24,20 @@ class App extends Component {
       fullPaths: [],
       diffPath: '',
       fullDuration: 0,
-      minute: 3,
       count: 0,
       section: 1,
-      outputDirName: ''
+      outputDirName: '',
+      minute: 3,
     }
   }
 
-  // componentDidMount() {
-  //   if (this.state.audioUrl) {
-  //     this.loadAudioFromUrl(this.state.audioUrl);
-  //   }
-  //   this.player.addEventListener('timeupdate', () => {
-  //     const currentTime = this.player.currentTime;
-  //     const duration = this.player.duration;
-  //     this.setState({audioProgress: ((currentTime / duration) * 100).toPrecision(4)});
-  //   });
-  // }
+  componentDidMount() {
+    this.player.addEventListener('timeupdate', () => {
+      const currentTime = this.player.currentTime;
+      const duration = this.player.duration;
+      this.setState({audioProgress: ((currentTime / duration) * 100).toPrecision(4)});
+    });
+  }
 
   delDir = path => {
     let files = [];
@@ -82,14 +79,13 @@ class App extends Component {
       }
       fullPaths.push(d)
       this.setState({
-        // audioUrl: url,
-        fullPaths,
+        fullPaths
       });
     });
   }
 
   _renderSVGWaveform() {
-    const { fullPaths, section } = this.state;
+    const { fullPaths, section, audioProgress } = this.state;
     const persent = 1/section * 100
     return (
         <div className="audio-graph">
@@ -106,7 +102,7 @@ class App extends Component {
                     </g>
                 </svg>
             ))}
-            {/* <div className="audio-progress" style={{width: `${audioProgress}%`}}></div> */}
+            <div className="audio-progress" style={{width: `${audioProgress}%`}}></div>
         </div>
     );
   }
@@ -131,12 +127,24 @@ class App extends Component {
             break;
           default:
             extension = audioType;
-        }
+        }        
+        const outputFullPath = `${OUTPUT_DIR}/${fileName}-${startTime}.${extension}`;
         this.setState({
           section: Math.ceil(audioDuration / (60 * this.state.minute)) //分割的总份数
         }, () => {
-          this._splitAudio(filePath, fileName, extension, startTime); // 开始分割音频文件
+          this._splitAudio(filePath, fileName, extension, startTime); //开始分割音频文件
         });
+        const command = ffmpeg()  // 生成整段的音频
+        command.input(filePath).noVideo().audioCodec('copy')
+        .on('error', function(err) {
+          alert(`转化失败: "${err.message}"`);
+        })
+        .on('end', () => {
+          this.setState({
+            output: outputFullPath,
+            audioUrl: `${fileName}-${startTime}.${extension}`
+          })
+        }).output(outputFullPath).run();
       } else {
         alert('未找到音频流！');
       }
@@ -152,7 +160,7 @@ class App extends Component {
     if (count < section) { // 计数器小于长度时持续分割
       const command = ffmpeg()  // 开始ffmpeg设置及事件绑定
       command.input(filePath).noVideo().audioCodec('copy')
-      .on('error', function(err, stdout, stderr) {
+      .on('error', function(err) {
         alert(`转化失败: "${err.message}"`);
       })
       .on('end', () => {
@@ -173,7 +181,7 @@ class App extends Component {
       const { target: { files } } = evt;
       let file;
       if (files.length > 0) {
-        this.setState({ // 重选时还原所有默认值
+        this.setState({
           entry: '',
           output: '',
           firstDuration: 0,
@@ -184,8 +192,9 @@ class App extends Component {
           fullDuration: 0,
           count: 0,
           section: 1,
-          outputDirName: ''
-        }, () => {
+          outputDirName: '',
+        }, // 重选时还原所有默认值
+        () => {
           file = files[0];
             // 素材路径
             const filePath = file.path;
@@ -207,7 +216,8 @@ class App extends Component {
       output,
       firstDuration,
       audioUrl,
-      fullDuration
+      fullDuration,
+      fullPaths
      } = this.state
     return (
       <div>
@@ -218,10 +228,10 @@ class App extends Component {
             输入文件：
             <input className="path" type="input" value={entry} readOnly />
           </div>
-          {/* <div className="wrapper">
+          <div className="wrapper">
             输出文件：
             <input className="path" type="input" value={output} readOnly />
-          </div> */}
+          </div>
           <div className="wrapper">
             一段svg时间：
             <input className="path" type="input" value={`${firstDuration}ms`} readOnly />
@@ -230,15 +240,15 @@ class App extends Component {
             全部svg时间：
             <input className="path" type="input" value={`${fullDuration}ms`} readOnly />
           </div>
-          {/* <audio
+          <audio
               className="player"
               ref={component => { this.player = component; }}
-              // src={fullPaths.length !== 0 ? audioUrl : undefined}
+              src={fullPaths.length !== 0 ? audioUrl : undefined}
               // autoPlay
               controls
           >
               You browser doesn't support <code>audio</code> element.
-          </audio> */}
+          </audio>
           <div className="waveforms">
             {this._renderSVGWaveform()}
           </div>
