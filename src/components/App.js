@@ -143,8 +143,8 @@ class App extends Component {
       console.log(`转化失败: "${err.message}"`);
     })
     .on('end', () => {
-      if (this.state.cancelFlag) {
-        setTimeout(() => {
+      if (this.state.cancelFlag) { // 终止分割音频
+        setTimeout(() => { // 因为有连环回掉延后重置
           this.resetState();
         }, 1000);
         return;
@@ -170,8 +170,8 @@ class App extends Component {
     trackWaveform.loadFromUrl().then(() => {
       const { outputDirName } = this.state
       const { d, timestamp: endTime } = trackWaveform.getPath();
-      if (this.state.cancelFlag) {
-        setTimeout(() => {
+      if (this.state.cancelFlag) { // 终止生成音频svg
+        setTimeout(() => { // 因为有连环回掉延后重置
           this.resetState();
         }, 1000);
         return;
