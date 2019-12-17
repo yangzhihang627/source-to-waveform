@@ -12,32 +12,52 @@ const process = require('process');
 const fs = require('fs');
 const OUTPUT_DIR = path.resolve(process.cwd(), 'dist');
 
-class App extends Component {
-  constructor (props) {
-    super(props)
-    this.state = {
-      entry: '',
-      output: '',
-      firstDuration: 0,
-      audioUrl: undefined,
-      audioProgress: 0,
-      fullPaths: [],
-      diffPath: '',
-      fullDuration: 0,
-      count: 0,
-      section: 1,
-      outputDirName: '',
-      cancelFlag: false,
-      ffCommand: null,
-      cancelDisabled: true,
-      minute: 3
-    }
+interface AppState {
+  entry: string,
+  output: string,
+  firstDuration: number,
+  audioUrl: undefined | string,
+  audioProgress: any,
+  fullPaths: Array<string>,
+  diffPath: string,
+  fullDuration: number,
+  count: number,
+  section: number,
+  outputDirName: string,
+  cancelFlag: Boolean,
+  ffCommand: null | Object,
+  cancelDisabled: Boolean,
+  minute: number
+}
+
+export default class App extends Component<any, AppState> {
+  readonly state = {
+    entry: '',
+    output: '',
+    firstDuration: 0,
+    audioUrl: undefined,
+    audioProgress: 0,
+    fullPaths: [],
+    diffPath: '',
+    fullDuration: 0,
+    count: 0,
+    section: 1,
+    outputDirName: '',
+    cancelFlag: false,
+    ffCommand: null,
+    cancelDisabled: true,
+    minute: 3
   }
 
+  private playerRef = React.createRef<HTMLAudioElement>();
+  private inputRef = React.createRef<HTMLInputElement>();
+
   componentDidMount() {
-    this.player.addEventListener('timeupdate', () => {
-      const currentTime = this.player.currentTime;
-      const duration = this.player.duration;
+    const player: HTMLAudioElement = this.playerRef.current;
+    player.addEventListener('timeupdate', () => {
+      const currentTime = player.currentTime;
+      const duration = player.duration;
+      console.log(((currentTime / duration) * 100).toPrecision(4))
       this.setState({audioProgress: ((currentTime / duration) * 100).toPrecision(4)});
     });
   }
@@ -93,7 +113,9 @@ class App extends Component {
     ffmpeg.ffprobe(filePath, (err, metadata) => {
       if (!err) {
         const audioMsg = metadata.streams.filter((item) => item.codec_type === 'audio')[0];
-        const { codec_name: audioType, duration: audioDuration} = audioMsg;
+        console.log(audioMsg)
+        const audioType: string = audioMsg.codec_name;
+        const audioDuration: any = audioMsg.duration;
         let extension;
         switch (audioType){
           case 'vorbis':
@@ -162,14 +184,18 @@ class App extends Component {
   }
 
   audio2Svg = (outputUrl, startTime) => {
-    const { count, fullPaths, section } = this.state
+    const { count, fullPaths, section } = this.state;
     const trackWaveform = new AudioSVGWaveform({
       sampleRate: 3000,
-      url: outputUrl
+      url: outputUrl,
+      buffer: null
     });
     trackWaveform.loadFromUrl().then(() => {
       const { outputDirName } = this.state
-      const { d, timestamp: endTime } = trackWaveform.getPath();
+      const data: any = trackWaveform.getPath();
+      const d: string = data.d;
+      const endTime: number = data.timestamp;
+
       if (this.state.cancelFlag) { // 终止生成音频svg
         setTimeout(() => { // 因为有连环回掉延后重置
           this.resetState();
@@ -197,7 +223,7 @@ class App extends Component {
     });
   }
 
-  resetState = (cb) => {
+  resetState = (cb?: Function) => {
     this.setState({ // 还原所有默认值
       entry: '',
       output: '',
@@ -229,7 +255,7 @@ class App extends Component {
         this.setState({
           entry: filePath
         }, () => {
-          this.inputRef.value = '';
+          this.inputRef.current.value = '';
         });
         this.video2Audio(filePath);
       })
@@ -260,7 +286,7 @@ class App extends Component {
     return (
       <div>
         <div className="wrapper">
-          <input ref={(inputRef) => {this.inputRef = inputRef}} type="file" name="waveform" onChange={this.changeSource} />
+          <input ref={this.inputRef} type="file" name="waveform" onChange={this.changeSource} />
           <button onClick={this.handleCancel} disabled={cancelDisabled}>取消生成SVG</button>
         </div>
           <div className="wrapper">
@@ -281,7 +307,7 @@ class App extends Component {
           </div>
           <audio
               className="player"
-              ref={component => { this.player = component; }}
+              ref={ this.playerRef }
               src={audioUrl}
               controls
           >
@@ -294,5 +320,3 @@ class App extends Component {
     );
   }
 }
-
-export default App;

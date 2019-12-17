@@ -14,11 +14,14 @@ const OUTPUT_DIR = path.resolve(__dirname, 'dist');
 const defaultInclude = [SRC_DIR];
 
 module.exports = {
-  entry: SRC_DIR + '/index.js',
+  entry: SRC_DIR + '/index.tsx',
   output: {
     path: OUTPUT_DIR,
     publicPath: './',
     filename: 'bundle.js'
+  },
+  resolve: {
+    extensions: ['.ts','.tsx','.js', '.jsx', '.json']
   },
   externals: [nodeExternals()],
   module: {
@@ -32,9 +35,24 @@ module.exports = {
         include: defaultInclude
       },
       {
-        test: /\.jsx?$/,
-        use: [{ loader: 'babel-loader' }],
-        include: defaultInclude
+        test: /\.tsx?$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader',
+        options: {
+          cacheDirectory: true,
+          babelrc: false,
+          presets: [
+              [
+                  '@babel/preset-env',
+                  { targets: { browsers: 'last 2 versions ' } }
+              ],
+              '@babel/preset-typescript',
+              '@babel/preset-react'
+          ],
+          plugins: [
+              ['@babel/plugin-proposal-class-properties', { loose: true }]
+          ]
+        }
       },
       {
         test: /\.(jpe?g|png|gif)$/,
