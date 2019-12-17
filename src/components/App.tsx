@@ -1,120 +1,293 @@
-import React from 'react';
+import './App.scss'
+import React, { Component } from 'react';
 import ffmpeg from 'fluent-ffmpeg';
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffprobePath = require('@ffprobe-installer/ffprobe').path;
 ffmpeg.setFfmpegPath(ffmpegPath);
 ffmpeg.setFfprobePath(ffprobePath);
 
-// const AudioSVGWaveform = require('audio-waveform-svg-path');
-
-import './App.scss'
+import AudioSVGWaveform from 'audio-waveform-svg-path';
+const path = require('path');
+const process = require('process');
+const fs = require('fs');
+const OUTPUT_DIR = path.resolve(process.cwd(), 'dist');
 
 interface AppState {
   entry: string,
   output: string,
-  duration: number
+  firstDuration: number,
+  audioUrl: undefined | string,
+  audioProgress: any,
+  fullPaths: Array<string>,
+  diffPath: string,
+  fullDuration: number,
+  count: number,
+  section: number,
+  outputDirName: string,
+  cancelFlag: Boolean,
+  ffCommand: null | Object,
+  cancelDisabled: Boolean,
+  minute: number
 }
 
-interface AppProps {
-  p?: any
-}
-
-export default class App extends React.PureComponent<AppProps, AppState> {
+export default class App extends Component<any, AppState> {
   readonly state = {
     entry: '',
     output: '',
-    duration: 0
+    firstDuration: 0,
+    audioUrl: undefined,
+    audioProgress: 0,
+    fullPaths: [],
+    diffPath: '',
+    fullDuration: 0,
+    count: 0,
+    section: 1,
+    outputDirName: '',
+    cancelFlag: false,
+    ffCommand: null,
+    cancelDisabled: true,
+    minute: 3
   }
 
+  private playerRef = React.createRef<HTMLAudioElement>();
   private inputRef = React.createRef<HTMLInputElement>();
-  private pathRef = React.createRef<HTMLDivElement>();
 
-  // audio2Svg = (filePath: string) => {
-  //   const trackWaveform = new AudioSVGWaveform({url: filePath});
-  //   trackWaveform.loadFromUrl().then(() => {
-  //     const path = trackWaveform.getPath();
-  //     this.pathRef.current.setAttribute('d', path);
-  //   });
-  // }
+  componentDidMount() {
+    const player: HTMLAudioElement = this.playerRef.current;
+    player.addEventListener('timeupdate', () => {
+      const currentTime = player.currentTime;
+      const duration = player.duration;
+      console.log(((currentTime / duration) * 100).toPrecision(4))
+      this.setState({audioProgress: ((currentTime / duration) * 100).toPrecision(4)});
+    });
+  }
 
-  video2Audio = (filePath: string) => {
+  delDir = path => {
+    let files = [];
+    if(fs.existsSync(path)){
+      files = fs.readdirSync(path);
+      files.forEach((file, index) => {
+        let curPath = path + "/" + file;
+        if(fs.statSync(curPath).isDirectory()){
+          this.delDir(curPath); //递归删除文件夹
+        } else {
+          fs.unlinkSync(curPath); //删除文件
+        }
+      });
+      fs.rmdirSync(path);
+    }
+  }
+
+  _renderSVGWaveform() {
+    const { fullPaths, section, audioProgress } = this.state;
+    const persent = 1/section * 100
+    return (
+      <div className="audio-graph">
+        {fullPaths.map((path, index) => (
+          <svg
+            className="waveform"
+            style={{width: `${persent}%`}}
+            viewBox="0 -1 6000 2"
+            preserveAspectRatio="none"
+            key={index}
+          >
+            <g>
+              <path className="waveform__path" d={path} />
+            </g>
+          </svg>
+        ))}
+        <div className="audio-progress" style={{width: `${audioProgress}%`}}></div>
+      </div>
+    );
+  }
+
+  video2Audio = (filePath) => {
     // 素材位置
-    const filePwd = filePath.slice(0, filePath.lastIndexOf('/'));
     const fileName = filePath.slice(filePath.lastIndexOf('/') + 1, filePath.lastIndexOf('.'));
-    ffmpeg.ffprobe(filePath, (err: any, metadata: any) => {
+    const startTime = Date.now(); //开始计时
+    const outputDirName = `${OUTPUT_DIR}/${fileName}-${startTime}`;
+    fs.mkdirSync(outputDirName);
+    this.setState({
+      outputDirName
+    })
+    ffmpeg.ffprobe(filePath, (err, metadata) => {
       if (!err) {
-        const audioType = metadata.streams.filter(
-            (item: any) => item.codec_type === 'audio'
-          )[0].codec_name;
-        let startTime: number = 0;
-        let endTime: number = 0;
-        let extension: string = '';
+        const audioMsg = metadata.streams.filter((item) => item.codec_type === 'audio')[0];
+        console.log(audioMsg)
+        const audioType: string = audioMsg.codec_name;
+        const audioDuration: any = audioMsg.duration;
+        let extension;
         switch (audioType){
           case 'vorbis':
             extension = 'ogg';
             break;
           default:
             extension = audioType;
-        }
-        const outputPath = `${filePwd}/${fileName}-${Date.now()}.${extension}`;
-        const command = ffmpeg()
-        command.input(filePath)
-        .noVideo().audioCodec('copy')
-        .on('start', (commandLine: string) => {
-          startTime = Date.now();
-          console.log('start-process:', startTime);
-          console.log('Spawned Ffmpeg with command: '+ commandLine);
-        })
-        .on('error', function(err: any, stdout: any, stderr: any) {
-          alert(`转化失败: ${err.message}`);
-        })
-        .on('end', () => {
-          endTime = Date.now();
-          console.log('end-process:', endTime);
-          this.setState({
-            output: outputPath,
-            duration: (endTime - startTime)
+        }        
+        const outputFullPath = `${OUTPUT_DIR}/${fileName}-${startTime}.${extension}`;
+        const command = ffmpeg();
+        this.setState({
+          output: outputFullPath,
+          section: Math.ceil(audioDuration / (60 * this.state.minute)), //分割的总份数
+          ffCommand: command,
+          cancelDisabled: false
+        }, () => {
+          command.input(filePath).noVideo().audioCodec('copy') // 生成整段音频
+          .on('error', (err) => {
+            console.log(`转化失败: "${err.message}"`);
           })
-          // this.audio2Svg(outputPath);
-        }).output(outputPath).run()
+          .on('end', () => {
+            this.setState({
+              audioUrl: `${fileName}-${startTime}.${extension}`
+            })
+          }).output(outputFullPath).run();
+          this.splitAudio(filePath, fileName, extension, startTime); // 开始分割音频文件
+        });
       } else {
-        alert('未找到音频流！');
+        console.log('未找到音频流！');
       }
     })
   }
 
-  changeSource = (evt: React.ChangeEvent <HTMLInputElement>) => {
-      const { target } = evt;
-      const files = (target as any).files as FileList;
-      let file: any;
-      if (files.length > 0) {
-        this.setState({
-          entry: '',
-          output: '',
-          duration: 0
-        }, () => {
-          file = files[0];
-            console.log(file);
-            // 素材路径
-            const filePath: string = file.path as string;
-            this.setState({
-              entry: filePath
-            }, () => {
-              this.inputRef.current.value  = '';
-            });
-            this.video2Audio(filePath);
-        })
-      } else {
-        alert('上传视频失败')
+  splitAudio = (filePath, fileName, extension, startTime) => {
+    const { minute, count, section } = this.state;
+    const outputName = `${fileName}-${Date.now()}.${extension}`;
+    const outputUrl = `${fileName}-${startTime}/${outputName}`;
+    const outputPath = `${OUTPUT_DIR}/${outputUrl}`;
+    const unit = 60 * minute; // 分割单位
+    if (count >= section) { // 计数器小于长度时持续分割
+      console.log('音频分割完成');
+      return;
+    }
+    const command = ffmpeg()  // 开始分割每段音频
+    command.input(filePath).noVideo().audioCodec('copy')
+    .on('error', (err) => {
+      console.log(`转化失败: "${err.message}"`);
+    })
+    .on('end', () => {
+      if (this.state.cancelFlag) { // 终止分割音频
+        setTimeout(() => { // 因为有连环回掉延后重置
+          this.resetState();
+        }, 1000);
+        return;
       }
+      this.audio2Svg(outputUrl, startTime);
+      this.setState({
+        count: count + 1
+      }, () => {
+        this.splitAudio(filePath, fileName, extension, startTime);
+      })
+    }).output(outputPath)
+    .seek(unit * count)
+    .duration(unit)
+    .run()
+  }
+
+  audio2Svg = (outputUrl, startTime) => {
+    const { count, fullPaths, section } = this.state;
+    const trackWaveform = new AudioSVGWaveform({
+      sampleRate: 3000,
+      url: outputUrl,
+      buffer: null
+    });
+    trackWaveform.loadFromUrl().then(() => {
+      const { outputDirName } = this.state
+      const data: any = trackWaveform.getPath();
+      const d: string = data.d;
+      const endTime: number = data.timestamp;
+
+      if (this.state.cancelFlag) { // 终止生成音频svg
+        setTimeout(() => { // 因为有连环回掉延后重置
+          this.resetState();
+        }, 1000);
+        return;
+      }
+      switch (count) {
+        case section - 1: //全部svg生成时间
+            this.setState({
+              fullDuration: (endTime - startTime),
+              cancelDisabled: true
+            });
+            this.delDir(outputDirName);
+            break;
+        case 0: // 第一段svg生成时间
+            this.setState({
+              firstDuration: (endTime - startTime)
+            });
+            break;
+      }
+      fullPaths.push(d)
+      this.setState({
+        fullPaths,
+      })
+    });
+  }
+
+  resetState = (cb?: Function) => {
+    this.setState({ // 还原所有默认值
+      entry: '',
+      output: '',
+      firstDuration: 0,
+      audioUrl: undefined,
+      audioProgress: 0,
+      fullPaths: [],
+      diffPath: '',
+      fullDuration: 0,
+      count: 0,
+      section: 1,
+      outputDirName: '',
+      cancelFlag: false,
+      ffCommand: null,
+      cancelDisabled: true
+    }, () => {
+      if(cb) cb();
+    })
+  }
+
+  changeSource = (evt) => {
+    const { target: { files } } = evt;
+    let file;
+    if (files.length > 0) {
+      this.resetState(() => {
+        file = files[0];
+        // 素材路径
+        const filePath = file.path;
+        this.setState({
+          entry: filePath
+        }, () => {
+          this.inputRef.current.value = '';
+        });
+        this.video2Audio(filePath);
+      })
+    } else {
+      console.log('上传视频失败')
+    }
+  }
+
+  handleCancel = () => {
+    const { output, ffCommand, outputDirName } = this.state
+    this.setState({ // 终止分割音频
+      cancelFlag: true
+    })
+    ffCommand.kill(); // 终止生成整段音频
+    this.delDir(outputDirName) // 删除分割音频的文件夹
+    fs.unlinkSync(output); // 删除整段音频
   }
 
   render() {
-    const { entry, output, duration } = this.state
+    const { 
+      entry,
+      output,
+      firstDuration,
+      audioUrl,
+      fullDuration,
+      cancelDisabled
+     } = this.state
     return (
       <div>
         <div className="wrapper">
           <input ref={this.inputRef} type="file" name="waveform" onChange={this.changeSource} />
+          <button onClick={this.handleCancel} disabled={cancelDisabled}>取消生成SVG</button>
         </div>
           <div className="wrapper">
             输入文件：
@@ -125,10 +298,24 @@ export default class App extends React.PureComponent<AppProps, AppState> {
             <input className="path" type="input" value={output} readOnly />
           </div>
           <div className="wrapper">
-            转化时间：
-            <input className="path" type="input" value={duration} readOnly />
+            一段svg时间：
+            <input className="path" type="input" value={`${firstDuration}ms`} readOnly />
           </div>
-          <div ref={this.pathRef}></div>
+          <div className="wrapper">
+            全部svg时间：
+            <input className="path" type="input" value={`${fullDuration}ms`} readOnly />
+          </div>
+          <audio
+              className="player"
+              ref={ this.playerRef }
+              src={audioUrl}
+              controls
+          >
+              You browser doesn't support <code>audio</code> element.
+          </audio>
+          <div className="waveforms">
+            {this._renderSVGWaveform()}
+          </div>
       </div>
     );
   }

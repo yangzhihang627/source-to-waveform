@@ -12,19 +12,15 @@ const OUTPUT_DIR = path.resolve(__dirname, 'dist');
 const defaultInclude = [SRC_DIR];
 
 module.exports = {
-  entry: {
-    app: ['@babel/polyfill', SRC_DIR + '/index.tsx']
-  },
+  entry: SRC_DIR + '/index.tsx',
   output: {
     path: OUTPUT_DIR,
     publicPath: '/',
     filename: 'bundle.js'
   },
+  externals: [nodeExternals()],
   resolve: {
-    extensions: ['.tsx', '.ts', '.js', '.json'],
-    alias: {
-      'react-dom': '@hot-loader/react-dom'
-    }
+    extensions: ['.ts','.tsx','.js', '.jsx', '.json']
   },
   module: {
     rules: [
@@ -69,7 +65,6 @@ module.exports = {
       }
     ]
   },
-  externals: [nodeExternals()],
   target: 'electron-renderer',
   plugins: [
     new HtmlWebpackPlugin(),
