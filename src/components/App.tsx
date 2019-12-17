@@ -6,7 +6,7 @@ const ffprobePath = require('@ffprobe-installer/ffprobe').path;
 ffmpeg.setFfmpegPath(ffmpegPath);
 ffmpeg.setFfprobePath(ffprobePath);
 
-import AudioSVGWaveform from 'audio-waveform-svg-path';
+import AudioSVGWaveform from '../lib/audioSVGWaveform';
 const path = require('path');
 const process = require('process');
 const fs = require('fs');
@@ -57,7 +57,6 @@ export default class App extends Component<any, AppState> {
     player.addEventListener('timeupdate', () => {
       const currentTime = player.currentTime;
       const duration = player.duration;
-      console.log(((currentTime / duration) * 100).toPrecision(4))
       this.setState({audioProgress: ((currentTime / duration) * 100).toPrecision(4)});
     });
   }
