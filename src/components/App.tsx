@@ -6,7 +6,7 @@ const ffprobePath = require('@ffprobe-installer/ffprobe').path;
 ffmpeg.setFfmpegPath(ffmpegPath);
 ffmpeg.setFfprobePath(ffprobePath);
 
-import AudioSVGWaveform from '../lib/audioSVGWaveform';
+import AudioSVGWaveform from '../lib/audio-svg-waveform';
 const path = require('path');
 const process = require('process');
 const fs = require('fs');
@@ -18,7 +18,7 @@ interface AppState {
   firstDuration: number,
   audioUrl: undefined | string,
   audioProgress: any,
-  fullPaths: Array<string>,
+  fullPaths: string[],
   diffPath: string,
   fullDuration: number,
   count: number,
@@ -112,7 +112,6 @@ export default class App extends Component<any, AppState> {
     ffmpeg.ffprobe(filePath, (err, metadata) => {
       if (!err) {
         const audioMsg = metadata.streams.filter((item) => item.codec_type === 'audio')[0];
-        console.log(audioMsg)
         const audioType: string = audioMsg.codec_name;
         const audioDuration: any = audioMsg.duration;
         let extension;
