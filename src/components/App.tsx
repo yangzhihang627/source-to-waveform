@@ -12,7 +12,7 @@ interface AppState {
   entry: string,
   output: string,
   startTime: number,
-  audioUrl: undefined | string,
+  audioUrl: string | undefined,
   audioProgress: any,
   fullPaths: string[],
   fullDuration: number,
@@ -86,8 +86,9 @@ export default class App extends Component<any, AppState> {
     })
   }
 
-  changeSource = (evt) => {
-    const { target: { files } } = evt;
+  changeSource = (evt: React.ChangeEvent) => {
+    const { target } = evt;
+    const files = (target as any).files;
     let file;
     if (files.length > 0) {
       this.resetState(() => {
