@@ -49,22 +49,18 @@ export default class App extends Component<any, AppState> {
 
   _renderSVGWaveform() {
     const { fullPaths, section, audioProgress } = this.state;
-    const persent = 1/section * 100
     return (
       <div className="audio-graph">
-        {fullPaths.map((path, index) => (
+        
           <svg
             className="waveform"
-            style={{width: `${persent}%`}}
-            viewBox="0 -1 6000 2"
+            viewBox={`0 -1 ${6000 * section} 2`}
             preserveAspectRatio="none"
-            key={index}
           >
-            <g>
-              <path className="waveform__path" d={path} />
-            </g>
+            {fullPaths.map((path, index) => (
+              <path className="waveform__path" d={path} key={index} />
+            ))}
           </svg>
-        ))}
         <div className="audio-progress" style={{width: `${audioProgress}%`}}></div>
       </div>
     );
@@ -124,10 +120,10 @@ export default class App extends Component<any, AppState> {
             fullPaths
           })
         })
-        .on('end', (timestramp: number) => {
+        .on('end', (timestramp: number, fullPaths: string[]) => {
           this.setState({
             fullDuration: timestramp - this.state.startTime,
-            cancelDisabled: true
+            cancelDisabled: true,
           })
         })
         this.setState({

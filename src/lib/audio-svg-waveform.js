@@ -13,10 +13,11 @@ export default class AudioSVGWaveform {
         this.context = new AudioContext({
             sampleRate: sampleRate || 3000     //[3000, 44100, 384000]
         });
+        this.num = 6000;
     }
 
     _getPeaks(channelData, peaks, channelNumber) {
-        const peaksCount = 6000;
+        const peaksCount = this.num;
         const sampleSize = this.audioBuffer.length / peaksCount;
         const sampleStep = ~~(sampleSize / 10) || 1;
         const mergedPeaks = Array.isArray(peaks) ? peaks : [];
@@ -52,12 +53,12 @@ export default class AudioSVGWaveform {
     /**
      * @return {String} path of SVG path element
      */
-    _svgPath(peaks) {
+    _svgPath(peaks, length) {
         const totalPeaks = peaks.length;
 
         let d = '';
         // "for" is used for faster iteration
-        for (let peakNumber = 0; peakNumber < totalPeaks; peakNumber++) {
+        for (let peakNumber = this.num * 2 * length; peakNumber < totalPeaks * (length + 1); peakNumber++) {
             if (peakNumber % 2 === 0) {
                 d += ` M${~~(peakNumber / 2)}, ${peaks.shift()}`;
             } else {
@@ -80,7 +81,7 @@ export default class AudioSVGWaveform {
         return this.audioBuffer;
     }
 
-    getPath(channelsPreprocess) {
+    getPath(obj) {
         if (!this.audioBuffer) {
             console.log('No audio buffer to proccess');
             return null;
@@ -93,8 +94,8 @@ export default class AudioSVGWaveform {
             channels.push(this.audioBuffer.getChannelData(channelNumber));
         }
 
-        if (typeof channelsPreprocess === 'function') {
-            channels = channels.reduce(channelsPreprocess, []);
+        if (typeof obj.channelsPreprocess === 'function') {
+            channels = channels.reduce(obj.channelsPreprocess, []);
         }
 
         const peaks = channels.reduce(
@@ -102,7 +103,7 @@ export default class AudioSVGWaveform {
             (mergedPeaks, channelData, ...args) => this._getPeaks(channelData, mergedPeaks, ...args), []
         );
 
-        return this._svgPath(peaks);
+        return this._svgPath(peaks, obj.length);
     }
 }
 

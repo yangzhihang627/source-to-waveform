@@ -127,7 +127,7 @@ export default class SourceSVGWaveform extends EventEmitter {
         }, 1000);
         return;
       }
-      this.audio2Svg(outputUrl, startTime);
+      this.audio2Svg(outputUrl);
       this.count = this.count + 1;
       this.splitAudio(fileName, extension, startTime);
     }).output(outputPath)
@@ -136,14 +136,14 @@ export default class SourceSVGWaveform extends EventEmitter {
     .run()
   }
   
-  private audio2Svg (outputUrl: string, startTime: number) {
+  private audio2Svg (outputUrl: string) {
     const trackWaveform = new AudioSVGWaveform({
       sampleRate: 3000,
       url: outputUrl,
       buffer: null
     });
     trackWaveform.loadFromUrl().then(() => {
-      const data: any = trackWaveform.getPath();
+      const data: any = trackWaveform.getPath({ length: this.fullPaths.length });
       const d: string = data.d;
       const endTime: number = data.timestamp;
       if (this.cancelFlag) { // 终止生成音频svg
@@ -155,7 +155,7 @@ export default class SourceSVGWaveform extends EventEmitter {
       }
       if (this.fullPaths.length === this.section - 1) {
         this.reset()
-        this.emit('end', endTime)
+        this.emit('end', endTime, this.fullPaths)
       }
       this.fullPaths.push(d)
       this.emit('getSvg', this.fullPaths)
