@@ -14,6 +14,7 @@ export default class AudioSVGWaveform {
             sampleRate: sampleRate || 3000     //[3000, 44100, 384000]
         });
         this.num = 6000;
+        this.wavePeak = 100;
     }
 
     _getPeaks(channelData, peaks, channelNumber) {
@@ -25,11 +26,11 @@ export default class AudioSVGWaveform {
         for (let peakNumber = 0; peakNumber < peaksCount; peakNumber++) {
             const start = ~~(peakNumber * sampleSize);
             const end = ~~(start + sampleSize);
-            let min = channelData[0];
-            let max = channelData[0];
+            let min = ~~(channelData[0] * this.wavePeak);
+            let max = ~~(channelData[0] * this.wavePeak);
 
             for (let sampleIndex = start; sampleIndex < end; sampleIndex += sampleStep) {
-                const value = channelData[sampleIndex];
+                const value = ~~(channelData[sampleIndex] * this.wavePeak);
 
                 if (value > max) {
                     max = value;

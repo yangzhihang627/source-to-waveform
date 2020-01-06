@@ -51,10 +51,9 @@ export default class App extends Component<any, AppState> {
     const { fullPaths, section, audioProgress } = this.state;
     return (
       <div className="audio-graph">
-        
           <svg
             className="waveform"
-            viewBox={`0 -1 ${6000 * section} 2`}
+            viewBox={`0 -100 ${6000 * section} 200`}
             preserveAspectRatio="none"
           >
             {fullPaths.map((path, index) => (
