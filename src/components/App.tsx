@@ -14,7 +14,7 @@ interface AppState {
   startTime: number,
   audioUrl: string | undefined,
   audioProgress: any,
-  fullPaths: string[],
+  svgDatas: string[],
   fullDuration: number,
   section: number,
   sswCommand: null | Object,
@@ -28,7 +28,7 @@ export default class App extends Component<any, AppState> {
     startTime: 0,
     audioUrl: undefined,
     audioProgress: 0,
-    fullPaths: [],
+    svgDatas: [],
     fullDuration: 0,
     section: 1,
     sswCommand: null,
@@ -48,7 +48,7 @@ export default class App extends Component<any, AppState> {
   }
 
   _renderSVGWaveform() {
-    const { fullPaths, section, audioProgress } = this.state;
+    const { svgDatas, section, audioProgress } = this.state;
     return (
       <div className="audio-graph">
           <svg
@@ -56,7 +56,7 @@ export default class App extends Component<any, AppState> {
             viewBox={`0 -100 ${6000 * section} 200`}
             preserveAspectRatio="none"
           >
-            {fullPaths.map((path, index) => (
+            {svgDatas.map((path, index) => (
               <path className="waveform__path" d={path} key={index} />
             ))}
           </svg>
@@ -71,7 +71,7 @@ export default class App extends Component<any, AppState> {
       output: '',
       audioUrl: undefined,
       audioProgress: 0,
-      fullPaths: [],
+      svgDatas: [],
       fullDuration: 0,
       section: 1,
       sswCommand: null,
@@ -114,12 +114,12 @@ export default class App extends Component<any, AppState> {
             output: outputFullPath
           })
         })
-        .on('getSvg', (fullPaths: string[])=>{
+        .on('getSvg', (svgDatas: string[])=>{
           this.setState({
-            fullPaths
+            svgDatas
           })
         })
-        .on('end', (timestramp: number, fullPaths: string[]) => {
+        .on('end', (timestramp: number, svgDatas: string[]) => {
           this.setState({
             fullDuration: timestramp - this.state.startTime,
             cancelDisabled: true,

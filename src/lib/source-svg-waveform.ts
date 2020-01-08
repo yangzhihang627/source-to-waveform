@@ -28,7 +28,7 @@ export default class SourceSVGWaveform extends EventEmitter {
   cancelCallback: Function | null;
   audioUrl: string;
   cancelDisabled: boolean;
-  fullPaths: string[];
+  svgDatas: string[];
 
   constructor () {
     super()
@@ -43,7 +43,7 @@ export default class SourceSVGWaveform extends EventEmitter {
     this.ffCommand = null;
     this.audioUrl = '';
     this.cancelDisabled = true;
-    this.fullPaths = [];
+    this.svgDatas = [];
   }
 
   private delDir (path: string) {
@@ -63,7 +63,7 @@ export default class SourceSVGWaveform extends EventEmitter {
   }
 
   vidio2Svg (props: Vidio2SvgProps) {
-    this.fullPaths = [] // svg数据清空
+    this.svgDatas = [] // svg数据清空
     this.filePath = props.source;
     props.minute && (this.minute = props.minute)
     const fileName: string = this.filePath.slice(this.filePath.lastIndexOf('/') + 1, this.filePath.lastIndexOf('.'));
@@ -143,7 +143,7 @@ export default class SourceSVGWaveform extends EventEmitter {
       buffer: null
     });
     trackWaveform.loadFromUrl().then(() => {
-      const data: any = trackWaveform.getPath({ length: this.fullPaths.length });
+      const data: any = trackWaveform.getPath({ length: this.svgDatas.length });
       const d: string = data.d;
       const endTime: number = data.timestamp;
       if (this.cancelFlag) { // 终止生成音频svg
@@ -153,12 +153,12 @@ export default class SourceSVGWaveform extends EventEmitter {
         }, 1000);
         return;
       }
-      if (this.fullPaths.length === this.section - 1) {
+      if (this.svgDatas.length === this.section - 1) {
         this.reset()
-        this.emit('end', endTime, this.fullPaths)
+        this.emit('end', endTime, this.svgDatas)
       }
-      this.fullPaths.push(d)
-      this.emit('getSvg', this.fullPaths)
+      this.svgDatas.push(d)
+      this.emit('getSvg', this.svgDatas)
     });
       
   }
