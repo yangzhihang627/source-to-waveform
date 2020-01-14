@@ -128,7 +128,7 @@ export default class SourceSVGWaveform extends EventEmitter {
         }, 1000);
         return;
       }
-      this.audio2Svg(outputUrl);
+      this.audio2Svg(outputUrl, this.count);
       this.count = this.count + 1;
       this.splitAudio(fileName, extension, startTime);
     }).output(outputPath)
@@ -137,7 +137,7 @@ export default class SourceSVGWaveform extends EventEmitter {
     .run()
   }
   
-  private audio2Svg (outputUrl: string) {
+  private audio2Svg (outputUrl: string, index: number) {
     const trackWaveform = new AudioSVGWaveform({
       sampleRate: 3000,
       url: outputUrl,
@@ -145,7 +145,7 @@ export default class SourceSVGWaveform extends EventEmitter {
     });
     trackWaveform.loadFromUrl().then(() => {
       const data: any = trackWaveform.getPath({
-        length: this.svgDatas.length,
+        index,
         minute: this.minute
       });
       const d: string = data.d;
@@ -159,8 +159,10 @@ export default class SourceSVGWaveform extends EventEmitter {
         }, 1000);
         return;
       }
-      
-      this.svgDatas.push(d)
+      if (this.svgDatas.length < index + 1) {
+        this.svgDatas.length = index + 1
+      }
+      this.svgDatas.splice(index, 1, d)
       this.curRate = duration / 60 / this.minute + this.curRate
       if (this.svgDatas.length === this.section) {
         this.delDir(this.outputDirName);

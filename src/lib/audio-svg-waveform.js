@@ -55,10 +55,10 @@ export default class AudioSVGWaveform {
     /**
      * @return {String} path of SVG path element
      */
-    _svgPath(peaks, length, minute) {
+    _svgPath(peaks, index, minute) {
         const totalPeaks = peaks.length;
         const baseIndex = minute * 60 * this.sampleCount
-        const startIndex = baseIndex * length * 2
+        const startIndex = baseIndex * index * 2
         let d = '';
         // "for" is used for faster iteration
         for (let peakNumber = startIndex; peakNumber < startIndex + totalPeaks; peakNumber++) {
@@ -111,7 +111,7 @@ export default class AudioSVGWaveform {
             (mergedPeaks, channelData, ...args) => this._getPeaks(channelData, mergedPeaks, ...args), []
         );
 
-        return this._svgPath(peaks, obj.length, obj.minute);
+        return this._svgPath(peaks, obj.index, obj.minute);
     }
 }
 
