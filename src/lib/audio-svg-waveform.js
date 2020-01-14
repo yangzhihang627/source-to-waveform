@@ -13,12 +13,13 @@ export default class AudioSVGWaveform {
         this.context = new AudioContext({
             sampleRate: sampleRate || 3000     //[3000, 44100, 384000]
         });
-        this.num = 6000;
+        this.sampleCount = 30;
         this.wavePeak = 100;
     }
 
     _getPeaks(channelData, peaks, channelNumber) {
-        const peaksCount = this.num;
+        this.duration = Math.round(this.audioBuffer.duration)
+        const peaksCount = this.duration * this.sampleCount
         const sampleSize = this.audioBuffer.length / peaksCount;
         const sampleStep = ~~(sampleSize / 10) || 1;
         const mergedPeaks = Array.isArray(peaks) ? peaks : [];
@@ -54,19 +55,25 @@ export default class AudioSVGWaveform {
     /**
      * @return {String} path of SVG path element
      */
-    _svgPath(peaks, length) {
+    _svgPath(peaks, length, minute) {
         const totalPeaks = peaks.length;
-
+        const baseIndex = minute * 60 * this.sampleCount
+        const startIndex = baseIndex * length * 2
         let d = '';
         // "for" is used for faster iteration
-        for (let peakNumber = this.num * 2 * length; peakNumber < totalPeaks * (length + 1); peakNumber++) {
+        for (let peakNumber = startIndex; peakNumber < startIndex + totalPeaks; peakNumber++) {
             if (peakNumber % 2 === 0) {
                 d += ` M${~~(peakNumber / 2)}, ${peaks.shift()}`;
             } else {
                 d += ` L${~~(peakNumber / 2)}, ${peaks.shift()}`;
             }
         }
-        return {d, timestamp: Date.now()};
+        return {
+            d,
+            timestamp: Date.now(), 
+            duration: this.duration,
+            baseIndex,
+        };
     }
 
     async loadFromUrl() {
@@ -104,7 +111,7 @@ export default class AudioSVGWaveform {
             (mergedPeaks, channelData, ...args) => this._getPeaks(channelData, mergedPeaks, ...args), []
         );
 
-        return this._svgPath(peaks, obj.length);
+        return this._svgPath(peaks, obj.length, obj.minute);
     }
 }
 

@@ -29,6 +29,7 @@ export default class SourceSVGWaveform extends EventEmitter {
   audioUrl: string;
   cancelDisabled: boolean;
   svgDatas: string[];
+  curRate: number;
 
   constructor () {
     super()
@@ -44,6 +45,7 @@ export default class SourceSVGWaveform extends EventEmitter {
     this.audioUrl = '';
     this.cancelDisabled = true;
     this.svgDatas = [];
+    this.curRate = 0;
   }
 
   private delDir (path: string) {
@@ -63,7 +65,7 @@ export default class SourceSVGWaveform extends EventEmitter {
   }
 
   vidio2Svg (props: Vidio2SvgProps) {
-    this.svgDatas = [] // svg数据清空
+    this.reset()
     this.filePath = props.source;
     props.minute && (this.minute = props.minute)
     const fileName: string = this.filePath.slice(this.filePath.lastIndexOf('/') + 1, this.filePath.lastIndexOf('.'));
@@ -85,9 +87,8 @@ export default class SourceSVGWaveform extends EventEmitter {
             extension = audioType;
         }        
         this.outputFullPath = `${OUTPUT_DIR}/${fileName}-${startTime}.${extension}`;
+        this.section = Math.ceil(audioDuration / (60 * this.minute)); //分割的总份数
         const command = ffmpeg();
-        this.section = Math.ceil(audioDuration / (60 * this.minute)), //分割的总份数
-        this.emit('getSection', this.section)
         this.ffCommand = command;
         this.cancelDisabled = false;
         command.input(this.filePath).noVideo().audioCodec('copy') // 生成整段音频
@@ -143,9 +144,14 @@ export default class SourceSVGWaveform extends EventEmitter {
       buffer: null
     });
     trackWaveform.loadFromUrl().then(() => {
-      const data: any = trackWaveform.getPath({ length: this.svgDatas.length });
+      const data: any = trackWaveform.getPath({
+        length: this.svgDatas.length,
+        minute: this.minute
+      });
       const d: string = data.d;
       const endTime: number = data.timestamp;
+      const duration: number = data.duration;
+      const baseIndex: number = data.baseIndex;
       if (this.cancelFlag) { // 终止生成音频svg
         setTimeout(() => { // 因为有连环回掉延后重置
           this.reset();
@@ -153,23 +159,27 @@ export default class SourceSVGWaveform extends EventEmitter {
         }, 1000);
         return;
       }
-      if (this.svgDatas.length === this.section - 1) {
-        this.reset()
-        this.emit('end', endTime, this.svgDatas)
-      }
+      
       this.svgDatas.push(d)
-      this.emit('getSvg', this.svgDatas)
+      this.curRate = duration / 60 / this.minute + this.curRate
+      if (this.svgDatas.length === this.section) {
+        this.delDir(this.outputDirName);
+        this.cancelDisabled = true;
+        this.emit('end', endTime)
+      }
+      this.emit('getSvg', this.svgDatas, this.curRate, baseIndex)
     });
       
   }
 
   private reset = () => {
+    this.svgDatas = []
     this.count = 0;
     this.filePath = '';
     this.audioUrl = '';
     this.cancelDisabled = true;
     this.ffCommand = null;
-    this.delDir(this.outputDirName);
+    this.curRate = 0;
   }
 
   cancel = (callback: Function) => {

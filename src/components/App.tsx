@@ -19,6 +19,8 @@ interface AppState {
   section: number,
   sswCommand: null | Object,
   cancelDisabled: Boolean,
+  curRate: number,
+  baseIndex: number,
 }
 
 export default class App extends Component<any, AppState> {
@@ -33,6 +35,8 @@ export default class App extends Component<any, AppState> {
     section: 1,
     sswCommand: null,
     cancelDisabled: true,
+    curRate: 0,
+    baseIndex: 0,
   }
 
   private playerRef = React.createRef<HTMLAudioElement>();
@@ -48,12 +52,14 @@ export default class App extends Component<any, AppState> {
   }
 
   _renderSVGWaveform() {
-    const { svgDatas, section, audioProgress } = this.state;
+    const { svgDatas, audioProgress, curRate, baseIndex } = this.state;
     return (
-      <div className="audio-graph">
+      <div className="audio-graph" style={{
+        width: `${Math.round(curRate * 200)}px`
+      }}>
           <svg
             className="waveform"
-            viewBox={`0 -100 ${6000 * section} 200`}
+            viewBox={`0 -100 ${Math.round(baseIndex * curRate)} 200`}
             preserveAspectRatio="none"
           >
             {svgDatas.map((path, index) => (
@@ -103,23 +109,20 @@ export default class App extends Component<any, AppState> {
             cancelDisabled: false
           })
         })
-        .on('getSection', (section: number) => {
-          this.setState({
-            section
-          })
-        })
         .on('getAudioData', (audioUrl: string, outputFullPath: string)=>{
           this.setState({
             audioUrl,
             output: outputFullPath
           })
         })
-        .on('getSvg', (svgDatas: string[])=>{
+        .on('getSvg', (svgDatas: string[], curRate: number, baseIndex: number)=>{
           this.setState({
-            svgDatas
+            svgDatas,
+            curRate,
+            baseIndex,
           })
         })
-        .on('end', (timestramp: number, svgDatas: string[]) => {
+        .on('end', (timestramp: number) => {
           this.setState({
             fullDuration: timestramp - this.state.startTime,
             cancelDisabled: true,
