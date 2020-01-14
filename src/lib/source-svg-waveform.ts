@@ -164,7 +164,7 @@ export default class SourceSVGWaveform extends EventEmitter {
       }
       this.svgDatas.splice(index, 1, d)
       this.curRate = duration / 60 / this.minute + this.curRate
-      if (this.svgDatas.length === this.section) {
+      if (this.svgDatas.filter(Boolean).length === this.section) {
         this.delDir(this.outputDirName);
         this.cancelDisabled = true;
         this.emit('end', endTime)
