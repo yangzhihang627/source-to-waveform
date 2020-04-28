@@ -193,4 +193,77 @@ export default class SourceSVGWaveform extends EventEmitter {
     fs.unlinkSync(this.outputFullPath); // 删除整段音频
     return this;
   }
+
+  private _getFps(info: any) {
+    try {
+      const f = Number(info.r_frame_rate.replace(/\/.*/, ''))
+      const t = Number(info.r_frame_rate.replace(/.*\//, ''))
+      return f / t
+    } catch (e) {
+      return 30
+    }
+  }
+
+  private _getFrameCount(info: any) {
+    return Number(info.nb_frames)
+  }
+
+  video2Pic (filePath: string) {
+    ffmpeg.ffprobe(filePath, (err, metadata) => {
+      if (err) return
+      const videoInfo = metadata.streams.find(inf => inf.codec_type === 'video')
+      const frameCount = this._getFrameCount(videoInfo)
+      const fps = this._getFps(videoInfo)
+      const baseName = path.basename(filePath)
+      const fileName = baseName.slice(0, baseName.lastIndexOf('.'))
+      const startTime = Date.now(); //开始计时
+      const outputDir = path.join(OUTPUT_DIR, `${fileName}-${startTime}`)
+      const outPath = path.join(outputDir, 'screenshot_%d.jpg')
+      fs.mkdirSync(outputDir);
+
+      ffmpeg(filePath)
+      .seek(10)
+      .duration(1)
+      .size('?x320')
+      .outputOptions([
+        '-q 25',
+      ])
+      .output(outPath)
+      .on('start', (command) => {
+        this.emit('start', startTime)
+        console.log(`命令行: ${command}`)
+      })
+      .on('error', err => {
+        console.log(`转化失败: ${err.message}`)
+      })
+      .on('end', () => {
+        this.emit('end', Date.now())
+        console.log('转化成功！')
+      })
+      .run()
+    })
+
+    return this
+    // ffmpeg()
+    // .input(path)
+    // .inputFPS(fps)
+    // .size('?x320')
+    // .outputOptions([
+    //   '-q 25',
+    // ])
+    // .on('start', (command) => {
+    //   console.log(`命令行: ${command}`)
+    // })
+    // // .on('progress', (progress) => {
+    // //   console.log(`进度: ${progress.percent}%`)
+    // // })
+    // .on('error', err => {
+    //   console.log(`转化失败: ${err.message}`)
+    // })
+    // .on('end', () => {
+    //   console.log('转化成功！')
+    // })
+    // .output(outputPath)
+    // .run()
+  }
 }

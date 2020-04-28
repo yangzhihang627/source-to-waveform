@@ -102,34 +102,16 @@ export default class App extends Component<any, AppState> {
           this.inputRef.current.value = '';
         });
         const command = new SourceSVGWaveform()
-        command.vidio2Svg({ source: filePath })
+        command.video2Pic(filePath)
         .on('start', (timestramp: number) => {
           this.setState({
             startTime: timestramp,
-            cancelDisabled: false
-          })
-        })
-        .on('getAudioData', (audioUrl: string, outputFullPath: string)=>{
-          this.setState({
-            audioUrl,
-            output: outputFullPath
-          })
-        })
-        .on('getSvg', (svgDatas: string[], curRate: number, baseIndex: number)=>{
-          this.setState({
-            svgDatas,
-            curRate,
-            baseIndex,
           })
         })
         .on('end', (timestramp: number) => {
           this.setState({
             fullDuration: timestramp - this.state.startTime,
-            cancelDisabled: true,
           })
-        })
-        this.setState({
-          sswCommand: command
         })
       })
     } else {
@@ -154,7 +136,6 @@ export default class App extends Component<any, AppState> {
       <div>
         <div className="wrapper">
           <input ref={this.inputRef} type="file" name="waveform" onChange={this.changeSource} />
-          <button onClick={this.handleCancel} disabled={cancelDisabled}>取消生成SVG</button>
         </div>
           <div className="wrapper">
             输入文件：
