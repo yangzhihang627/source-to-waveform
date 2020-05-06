@@ -12,8 +12,20 @@ const OUTPUT_DIR = path.resolve(process.cwd(), 'dist');
 const EventEmitter = require('events').EventEmitter;
 
 interface Vidio2SvgProps {
-  source: string;
-  minute?: number;
+  source: string
+  minute?: number
+}
+
+interface IVideoInfo {
+  outputDir: string
+  percentArray: Item[]
+  videoPath: string
+  fps: number
+}
+
+type Item = {
+  num: number
+  minute: number
 }
 
 export default class SourceSVGWaveform extends EventEmitter {
@@ -208,62 +220,153 @@ export default class SourceSVGWaveform extends EventEmitter {
     return Number(info.nb_frames)
   }
 
-  video2Pic (filePath: string) {
-    ffmpeg.ffprobe(filePath, (err, metadata) => {
-      if (err) return
-      const videoInfo = metadata.streams.find(inf => inf.codec_type === 'video')
-      const frameCount = this._getFrameCount(videoInfo)
-      const fps = this._getFps(videoInfo)
-      const baseName = path.basename(filePath)
-      const fileName = baseName.slice(0, baseName.lastIndexOf('.'))
-      const startTime = Date.now(); //开始计时
-      const outputDir = path.join(OUTPUT_DIR, `${fileName}-${startTime}`)
-      const outPath = path.join(outputDir, 'screenshot_%d.jpg')
-      fs.mkdirSync(outputDir);
+  private _random(m: number, n: number) {
+    return Math.floor(Math.random() * (n - m + 1) + m)
+  }
 
-      ffmpeg(filePath)
-      .seek(10)
-      .duration(1)
-      .size('?x320')
-      .outputOptions([
-        '-q 25',
-      ])
-      .output(outPath)
-      .on('start', (command) => {
-        this.emit('start', startTime)
-        console.log(`命令行: ${command}`)
-      })
-      .on('error', err => {
-        console.log(`转化失败: ${err.message}`)
-      })
-      .on('end', () => {
-        this.emit('end', Date.now())
-        console.log('转化成功！')
-      })
-      .run()
+  private _handleFrameCount(frameCount: number, duration: number) {
+    let frameCountSet = new Set()
+
+    for (let i = 0; i < 20; i++) {
+      let num
+      do {
+        num = this._random(1, frameCount)
+      }
+      while (frameCountSet.has(num)){
+        num = this._random(1, frameCount)
+      }
+      frameCountSet.add(num)
+    }
+
+    const percentArray = [...frameCountSet].sort((a, b) => (a as number) - (b as number)).map((num) => {
+      const minute = (num as number) / frameCount * duration
+      return {
+        num: num as number,
+        minute
+      }
     })
 
-    return this
-    // ffmpeg()
-    // .input(path)
-    // .inputFPS(fps)
-    // .size('?x320')
-    // .outputOptions([
-    //   '-q 25',
-    // ])
-    // .on('start', (command) => {
-    //   console.log(`命令行: ${command}`)
-    // })
-    // // .on('progress', (progress) => {
-    // //   console.log(`进度: ${progress.percent}%`)
-    // // })
-    // .on('error', err => {
-    //   console.log(`转化失败: ${err.message}`)
-    // })
-    // .on('end', () => {
-    //   console.log('转化成功！')
-    // })
-    // .output(outputPath)
-    // .run()
+    return percentArray
   }
+
+  private _handleVideo(filePath: string): Promise<IVideoInfo> {
+    return new Promise((res, rej) => {
+      ffmpeg.ffprobe(filePath, (err, metadata) => {
+        if (err) {
+          rej(err)
+          return
+        }
+        const videoInfo = metadata.streams.find(inf => inf.codec_type === 'video')
+        const frameCount = this._getFrameCount(videoInfo)
+        const fps = this._getFps(videoInfo)
+        const baseName = path.basename(filePath)
+        const fileName = baseName.slice(0, baseName.lastIndexOf('.'))
+        const startTime = Date.now()
+        const outputDir = path.join(OUTPUT_DIR, `${fileName}-${startTime}`)
+        const videoPath = path.join(outputDir, 'tmp_video.mp4')
+        fs.mkdirSync(outputDir)
+  
+        const percentArray = this._handleFrameCount(frameCount, parseInt(videoInfo.duration))
+        console.log(108, percentArray)
+        // res({
+        //   outputDir,
+        //   percentArray,
+        //   videoPath,
+        //   fps,
+        // })
+        if (parseInt(videoInfo.bit_rate) <= 500000) return
+        ffmpeg(filePath)
+        .size('?x720')
+        .audioBitrate('96k')
+        .outputOptions([
+          '-crf 40',
+          '-preset superfast',
+        ])
+        .on('error', (err) => {
+          console.log(`转化失败: "${err.message}"`, err)
+          rej(err)
+        })
+        .on('end', () => {
+          res({
+            outputDir,
+            percentArray,
+            videoPath,
+            fps,
+          })
+        })
+        .output(videoPath)
+        .run()
+      })
+    })
+    
+  }
+
+  video2Pic (filePath: string) {
+    this._handleVideo(filePath).then(videoInfo => {
+      const startTime = Date.now()
+      const {outputDir, percentArray, videoPath, fps} = videoInfo
+      const t = 1 / fps
+      // const cmd = ffmpeg(videoPath)
+      
+      this.emit('start', startTime)
+      percentArray.forEach((item, index) => {
+        const outPath = path.join(outputDir, `thumbnail_${item.num}.jpg`)
+        ffmpeg(videoPath)
+        .inputFPS(fps)
+        .size('?x320')
+        .outputOptions([
+          '-q 25',
+        ])
+        .seek(item.minute)
+        .duration(t)
+        .output(outPath)
+        .on('start', (command) => {
+          console.log(`命令行: ${command}`)
+        })
+        .on('error', err => {
+          console.log(`转化失败: ${err.message}`)
+        })
+        .on('end', () => {
+          if (index === percentArray.length - 1) {
+            this.emit('end', Date.now())
+          }
+          console.log('转化成功！')
+        })
+        .run()
+      })
+      
+    }).catch(e => console.log(e))
+
+    return this
+  }
+
+  // video2Pic (filePath: string) {
+  //   this._handleVideo(filePath).then(videoInfo => {
+  //     const startTime = Date.now()
+
+  //     ffmpeg(videoInfo.videoPath)
+  //     .on('start', (command) => {
+  //       this.emit('start', startTime)
+  //       console.log(`命令行: ${command}`)
+  //     })
+  //     .on('error', err => {
+  //       console.log(`转化失败: ${err.message}`)
+  //     })
+  //     .on('end', () => {
+  //       this.emit('end', Date.now())
+  //       console.log('转化成功！')
+  //     })
+  //     .outputOptions([
+  //       '-q 25',
+  //     ])
+  //     .screenshots({
+  //       timestamps: videoInfo.percentArray,
+  //       filename: 'thumbnail-at-%s-seconds.jpg',
+  //       folder: videoInfo.outputDir,
+  //       size: '?x320'
+  //     })
+  //   }).catch(e => console.log(e))
+
+  //   return this
+  // }
 }
