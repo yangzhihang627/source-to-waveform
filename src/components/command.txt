@@ -1,0 +1,30 @@
+ffmpeg -ss 4.919999999999999 -i /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/tmp_video.mp4 -y -filter_complex scale=w=trunc(oh*a/2)*2:h=320[size0];[size0]split=20[screen0][screen1][screen2][screen3][screen4][screen5][screen6][screen7][screen8][screen9][screen10][screen11][screen12][screen13][screen14][screen15][screen16][screen17][screen18][screen19] 
+-vframes 1 -q 25 -map [screen0] /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-4.919999999999999-seconds.jpg 
+-vframes 1 -map [screen1] -ss 1.1599800000000018 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-6.079980000000001-seconds.jpg 
+-vframes 1 -map [screen2] -ss 5.92002 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-10.840019999999999-seconds.jpg 
+-vframes 1 -map [screen3] -ss 6.12 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-11.04-seconds.jpg 
+-vframes 1 -map [screen4] -ss 8.040000000000003 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-12.96-seconds.jpg 
+-vframes 1 -map [screen5] -ss 8.560020000000002 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-13.48002-seconds.jpg 
+-vframes 1 -map [screen6] -ss 12.28002 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-17.20002-seconds.jpg 
+-vframes 1 -map [screen7] -ss 15.96 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-20.88-seconds.jpg 
+-vframes 1 -map [screen8] -ss 16.519980000000004 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-21.439980000000002-seconds.jpg 
+-vframes 1 -map [screen9] -ss 19.60002 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-24.52002-seconds.jpg 
+-vframes 1 -map [screen10] -ss 27.960000000000004 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-32.88-seconds.jpg 
+-vframes 1 -map [screen11] -ss 30.88002 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-35.800019999999996-seconds.jpg 
+-vframes 1 -map [screen12] -ss 31.399979999999996 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-36.319979999999994-seconds.jpg 
+-vframes 1 -map [screen13] -ss 33.28002 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-38.20002-seconds.jpg 
+-vframes 1 -map [screen14] -ss 33.88002 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-38.80002-seconds.jpg 
+-vframes 1 -map [screen15] -ss 36.16002 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-41.080020000000005-seconds.jpg 
+-vframes 1 -map [screen16] -ss 36.36 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-41.28-seconds.jpg 
+-vframes 1 -map [screen17] -ss 41.04 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-45.96-seconds.jpg 
+-vframes 1 -map [screen18] -ss 41.23998 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-46.159980000000004-seconds.jpg 
+-vframes 1 -map [screen19] -ss 46.12002 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-51.04002-seconds.jpg
+
+
+ffmpeg -r 25 -i /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588831561693/tmp_video.mp4 -y -filter:v scale=w=trunc(oh*a/2)*2:h=320 -q 25 -ss 0.76 -t 0.04 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588831561693/thumbnail_19.jpg
+
+ffmpeg -ss 29.4 -i /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588833592691/tmp_video.mp4 -y -filter_complex scale=w=trunc(oh*a/2)*2:h=320[size0];[size0]split=1[screen0] 
+-vframes 1 -q 25 -map [screen0] /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588833592691/thumbnail-at-29.4-seconds.jpg
+
+-y -filter_complex scale=w=trunc(oh*a/2)*2:h=320[size0];[size0]split=1[screen0]
+-vframes 1 -q 25 -map [screen0] -ss 46.12002 /Users/edwin/workspace/vmovier/source-to-waveform/dist/short_1min-1588823782825/thumbnail-at-51.04002-seconds.jpg

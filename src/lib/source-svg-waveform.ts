@@ -18,7 +18,7 @@ interface Vidio2SvgProps {
 
 interface IVideoInfo {
   outputDir: string
-  percentArray: Item[]
+  percentArray: number[]
   videoPath: string
   fps: number
 }
@@ -252,7 +252,7 @@ export default class SourceSVGWaveform extends EventEmitter {
   private _handleFrameCount(frameCount: number, duration: number) {
     let frameCountSet = new Set()
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 3; i++) {
       let num
       do {
         num = this._random(1, frameCount)
@@ -264,11 +264,7 @@ export default class SourceSVGWaveform extends EventEmitter {
     }
 
     const percentArray = [...frameCountSet].sort((a, b) => (a as number) - (b as number)).map((num) => {
-      const minute = (num as number) / frameCount * duration
-      return {
-        num: num as number,
-        minute
-      }
+      return (num as number) / frameCount * duration
     })
 
     return percentArray
@@ -383,12 +379,20 @@ export default class SourceSVGWaveform extends EventEmitter {
       })
       .outputOptions([
         '-q 25',
+        // '-filter_complex scale=w=trunc(oh*a/2)*2:h=320[size0];[size0]split=1[screen0]',
+        // '-vframes 1',
+        // '-q 25',
+        // '-map [screen0]',
+        // '-ss 46.12002',
       ])
+      // .output(`${videoInfo.outputDir}/thumbnail-at-51.04002-seconds.jpg`)
+      // .run()
       .screenshots({
         timestamps: videoInfo.percentArray,
         filename: 'thumbnail-at-%s-seconds.jpg',
         folder: videoInfo.outputDir,
-        size: '?x320'
+        size: '?x320',
+        fastSeek: true,
       })
     }).catch(e => console.log(e))
 
