@@ -18,7 +18,7 @@ interface Vidio2SvgProps {
 
 interface IVideoInfo {
   outputDir: string
-  percentArray: number[]
+  percentArray: Item[]
   videoPath: string
   fps: number
 }
@@ -252,7 +252,7 @@ export default class SourceSVGWaveform extends EventEmitter {
   private _handleFrameCount(frameCount: number, duration: number) {
     let frameCountSet = new Set()
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 20; i++) {
       let num
       do {
         num = this._random(1, frameCount)
@@ -264,7 +264,11 @@ export default class SourceSVGWaveform extends EventEmitter {
     }
 
     const percentArray = [...frameCountSet].sort((a, b) => (a as number) - (b as number)).map((num) => {
-      return (num as number) / frameCount * duration
+      const minute = (num as number) / frameCount * duration
+      return {
+        num: num as number,
+        minute
+      }
     })
 
     return percentArray
@@ -364,36 +368,38 @@ export default class SourceSVGWaveform extends EventEmitter {
   video2Pic (filePath: string) {
     this._handleVideo(filePath).then(videoInfo => {
       const startTime = Date.now()
-
-      ffmpeg(videoInfo.videoPath)
-      .on('start', (command) => {
-        this.emit('start', startTime)
-        console.log(`命令行: ${command}`)
+      const length = videoInfo.percentArray.length
+      this.emit('start', startTime)
+      videoInfo.percentArray.forEach((item, index) => {
+        ffmpeg(videoInfo.videoPath)
+        .on('start', (command) => {
+          console.log(`命令行: ${command}`)
+        })
+        .on('error', err => {
+          console.log(`转化失败: ${err.message}`)
+        })
+        .on('end', () => {
+          if (index === length - 1) {
+            this.emit('end', Date.now())
+          }
+          console.log('转化成功！')
+        })
+        .seekInput(item.minute)
+        .size('?x320')
+        .outputOptions([
+          '-vframes 1',
+          '-q 25',
+        ])
+        .output(`${videoInfo.outputDir}/thumbnail-${item.num}.jpg`)
+        .run()
       })
-      .on('error', err => {
-        console.log(`转化失败: ${err.message}`)
-      })
-      .on('end', () => {
-        this.emit('end', Date.now())
-        console.log('转化成功！')
-      })
-      .outputOptions([
-        '-q 25',
-        // '-filter_complex scale=w=trunc(oh*a/2)*2:h=320[size0];[size0]split=1[screen0]',
-        // '-vframes 1',
-        // '-q 25',
-        // '-map [screen0]',
-        // '-ss 46.12002',
-      ])
-      // .output(`${videoInfo.outputDir}/thumbnail-at-51.04002-seconds.jpg`)
-      // .run()
-      .screenshots({
-        timestamps: videoInfo.percentArray,
-        filename: 'thumbnail-at-%s-seconds.jpg',
-        folder: videoInfo.outputDir,
-        size: '?x320',
-        fastSeek: true,
-      })
+      // .screenshots({
+      //   timestamps: videoInfo.percentArray,
+      //   filename: 'thumbnail-at-%s-seconds.jpg',
+      //   folder: videoInfo.outputDir,
+      //   size: '?x320',
+      //   fastSeek: true,
+      // })
     }).catch(e => console.log(e))
 
     return this
