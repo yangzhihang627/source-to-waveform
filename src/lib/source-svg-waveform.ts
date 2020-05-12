@@ -86,17 +86,20 @@ export default class SourceSVGWaveform extends EventEmitter {
           default:
             extension = audioType;
         }        
-        this.outputFullPath = `${OUTPUT_DIR}/${fileName}-${startTime}.${extension}`;
+        this.outputFullPath = `${OUTPUT_DIR}/${fileName}-${startTime}.mp3`;
         this.section = Math.ceil(audioDuration / (60 * this.minute)); //分割的总份数
         const command = ffmpeg();
         this.ffCommand = command;
         this.cancelDisabled = false;
-        command.input(this.filePath).noVideo().audioCodec('copy') // 生成整段音频
+        command.input(this.filePath).noVideo() // 生成整段音频
+        .on('start', (command) => {
+          console.log(`命令行: ${command}`)
+        })
         .on('error', (err) => {
           console.log(`转化失败: "${err.message}"`);
         })
         .on('end', () => {
-          this.audioUrl = `${fileName}-${startTime}.${extension}`
+          this.audioUrl = `${fileName}-${startTime}.mp3`
           this.emit('getAudioData', this.audioUrl, this.outputFullPath)
         }).output(this.outputFullPath).run();
         this.splitAudio(fileName, extension, startTime); // 开始分割音频文件
@@ -117,6 +120,9 @@ export default class SourceSVGWaveform extends EventEmitter {
     }
     const command = ffmpeg()  // 开始分割每段音频
     command.input(this.filePath).noVideo().audioCodec('copy')
+    .on('start', (command) => {
+      console.log(`split命令行: ${command}`)
+    })
     .on('error', (err) => {
       console.log(`转化失败: "${err.message}"`);
     })
