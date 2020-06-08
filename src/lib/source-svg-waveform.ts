@@ -109,6 +109,24 @@ export default class SourceSVGWaveform extends EventEmitter {
     })
     return this;
   }
+
+  ass2srt (props: Vidio2SvgProps) {
+    const assPath = props.source
+    const fileName = path.parse(assPath).name
+    const outputFullPath = `${OUTPUT_DIR}/${fileName}.srt`
+    ffmpeg().input(assPath)
+    .on('start', (command) => {
+      console.log(`命令行: ${command}`)
+    })
+    .on('error', (err) => {
+      console.log(`转化失败: "${err.message}"`);
+    })
+    .on('end', () => {
+      this.audioUrl = `${fileName}.srt`
+      this.emit('getAudioData', this.audioUrl, this.outputFullPath)
+    }).output(outputFullPath).run();
+    return this
+  }
   
   private splitAudio (fileName: string, extension: string, startTime: number) {
     const outputName = `${fileName}-${Date.now()}.${extension}`;

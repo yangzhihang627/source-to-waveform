@@ -102,7 +102,7 @@ export default class App extends Component<any, AppState> {
           this.inputRef.current.value = '';
         });
         const command = new SourceSVGWaveform()
-        command.vidio2Svg({ source: filePath })
+        command.ass2srt({ source: filePath })
         .on('start', (timestramp: number) => {
           this.setState({
             startTime: timestramp,
