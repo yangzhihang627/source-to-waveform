@@ -127,6 +127,45 @@ export default class SourceSVGWaveform extends EventEmitter {
     }).output(outputFullPath).run();
     return this
   }
+
+  video2PNG (filePath: string) {
+    const fileName = path.parse(filePath).name
+    const outputPath = `${OUTPUT_DIR}/${fileName}-${Date.now()}.png`
+    ffmpeg(filePath)
+    .complexFilter([
+      '[0:a]aformat=channel_layouts=mono,showwavespic=s=4000x400:colors=#545454:scale=sqrt'
+    ])
+    .outputOptions([
+      '-vframes 1'
+    ])
+    .on('start', (command) => {
+      console.log(`命令行: ${command}`)
+    })
+    .on('error', (err) => {
+      console.log(`转化失败: "${err.message}"`);
+    })
+    .on('end', () => {
+      const image = new Image();  
+      // image.crossOrigin = ''
+      image.src = `file://${outputPath}`;  
+      image.onload = () => {
+        this.emit('getAudioData', this.audioUrl, this.getBase64Image(image))
+      }  
+      
+    }).save(outputPath)
+    return this
+  }
+
+  getBase64Image(img: HTMLImageElement) {
+    const canvas = document.createElement("canvas");  
+    canvas.width = img.width;  
+    canvas.height = img.height;  
+    const ctx = canvas.getContext("2d");  
+    ctx.drawImage(img, 0, 0, img.width, img.height);  
+    const ext = img.src.substring(img.src.lastIndexOf(".")+1).toLowerCase();  
+    const dataURL = canvas.toDataURL("image/"+ext);  
+    return dataURL;  
+  }
   
   private splitAudio (fileName: string, extension: string, startTime: number) {
     const outputName = `${fileName}-${Date.now()}.${extension}`;
@@ -160,6 +199,7 @@ export default class SourceSVGWaveform extends EventEmitter {
     .duration(unit)
     .run()
   }
+
   
   private audio2Svg (outputUrl: string, index: number) {
     const trackWaveform = new AudioSVGWaveform({
