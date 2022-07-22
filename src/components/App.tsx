@@ -1,12 +1,12 @@
 import './App.scss'
-import React, { Component } from 'react';
-import ffmpeg from 'fluent-ffmpeg';
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-const ffprobePath = require('@ffprobe-installer/ffprobe').path;
-ffmpeg.setFfmpegPath(ffmpegPath);
-ffmpeg.setFfprobePath(ffprobePath);
+import React, { Component } from 'react'
+import ffmpeg from 'fluent-ffmpeg'
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
+const ffprobePath = require('@ffprobe-installer/ffprobe').path
+ffmpeg.setFfmpegPath(ffmpegPath)
+ffmpeg.setFfprobePath(ffprobePath)
 
-import SourceSVGWaveform from '../lib/source-svg-waveform';
+import SourceSVGWaveform from '../lib/source-svg-waveform'
 
 interface AppState {
   entry: string,
@@ -39,20 +39,20 @@ export default class App extends Component<any, AppState> {
     baseIndex: 0,
   }
 
-  private playerRef = React.createRef<HTMLAudioElement>();
-  private inputRef = React.createRef<HTMLInputElement>();
+  private playerRef = React.createRef<HTMLAudioElement>()
+  private inputRef = React.createRef<HTMLInputElement>()
 
   componentDidMount() {
-    const player: HTMLAudioElement = this.playerRef.current;
+    const player: HTMLAudioElement = this.playerRef.current
     player.addEventListener('timeupdate', () => {
-      const currentTime = player.currentTime;
-      const duration = player.duration;
-      this.setState({audioProgress: ((currentTime / duration) * 100).toPrecision(4)});
-    });
+      const currentTime = player.currentTime
+      const duration = player.duration
+      this.setState({audioProgress: ((currentTime / duration) * 100).toPrecision(4)})
+    })
   }
 
   _renderSVGWaveform() {
-    const { svgDatas, audioProgress, curRate, baseIndex } = this.state;
+    const { svgDatas, audioProgress, curRate, baseIndex } = this.state
     return (
       <div className="audio-graph" style={{
         width: `${Math.round(curRate * 200)}px`
@@ -68,7 +68,7 @@ export default class App extends Component<any, AppState> {
           </svg>
         <div className="audio-progress" style={{width: `${audioProgress}%`}}></div>
       </div>
-    );
+    )
   }
 
   resetState = (callback?: Function) => {
@@ -83,35 +83,34 @@ export default class App extends Component<any, AppState> {
       sswCommand: null,
       cancelDisabled: true
     }, () => {
-      if(callback) callback();
+      if(callback) callback()
     })
   }
 
   changeSource = (evt: React.ChangeEvent) => {
-    const { target } = evt;
-    const files = (target as any).files;
-    let file;
+    const { target } = evt
+    const files = (target as any).files
+    let file
     if (files.length > 0) {
       this.resetState(() => {
-        file = files[0];
+        file = files[0]
         // 素材路径
-        const filePath = file.path;
+        const filePath = file.path
         this.setState({
           entry: filePath
         }, () => {
-          this.inputRef.current.value = '';
-        });
+          this.inputRef.current.value = ''
+        })
         const command = new SourceSVGWaveform()
-        command.video2PNG(filePath)
+        command.transVideo(filePath)
         .on('start', (timestramp: number) => {
           this.setState({
             startTime: timestramp,
             cancelDisabled: false
           })
         })
-        .on('getAudioData', (audioUrl: string, outputFullPath: string)=>{
+        .on('getAudioData', (outputFullPath: string)=>{
           this.setState({
-            audioUrl,
             output: outputFullPath
           })
         })
@@ -139,7 +138,7 @@ export default class App extends Component<any, AppState> {
 
   handleCancel = () => {
     const { sswCommand } = this.state
-    sswCommand.cancel(this.resetState.call(this)); // 终止生成整段音频
+    sswCommand.cancel(this.resetState.call(this)) // 终止生成整段音频
   }
 
   render() {
@@ -180,6 +179,6 @@ export default class App extends Component<any, AppState> {
             {this._renderSVGWaveform()}
           </div>
       </div>
-    );
+    )
   }
 }
