@@ -132,27 +132,33 @@ export default class SourceSVGWaveform extends EventEmitter {
     const { dir, name } = path.parse(filePath)
     const imgPath = path.resolve(dir, 'black.png')
     const assPath = path.resolve(dir, '12345.ass')
-    const outputPath = path.resolve(dir, `${name}_test.mp4`)
+    const outputPath = path.resolve(dir, `${name}-test.mp4`)
 
     ffmpeg.ffprobe(filePath, (err, metadata) => {
-      const videoInfo = metadata.streams.find(item => item.codec_type === 'audio')
-      const duration = Number(videoInfo.duration) || 1
-      console.log(222, metadata)
-
+      // const videoInfo = metadata.streams.find(item => item.codec_type === 'audio')
+      // const duration = Number(videoInfo.duration) || 1
+      console.log(111, metadata)
+      // 188575677
       ffmpeg(filePath)
-      // .noVideo()
       // .outputOptions([
-      //   `-vf subtitles=${assPath}`,
-      //   '-crf 50',
-      //   '-preset superfast',
-      //   // 此设置默认设置过高，导致播放器不能正常播放
-      //   '-pix_fmt yuv420p',
+      //   // `-vf subtitles=${assPath}`,
+      //   // '-preset superfast',
+      //   // '-filter:v scale=w=1242:h=867',
+      //   // '-pix_fmt yuva420p', // 此设置默认设置过高，导致播放器不能正常播放
+
+      //   // '-c:v prores', // 使用QuickTime Animation编码器进行视频压缩
+      //   // '-pix_fmt 4444',
+      //   // '-crf 20', // 将比特率降低到20
+      //   // '-g 15', // 设置关键帧间隔为15帧
       // ])
       // .addInput(imgPath)
       // .fps(25)
-      // .size('700x350')
+      // .videoCodec('libx265')
+      // .size('1088x1920')
       // .loop(duration)
       // .autopad(true, 'black')
+      // .videoBitrate('18000k')
+      // .audioBitrate('300k')
       .on('start', (command) => {
         this.emit('start', Date.now())
         console.log(`命令行: ${command}`)
@@ -164,10 +170,12 @@ export default class SourceSVGWaveform extends EventEmitter {
         console.log(`转化失败: "${err.message}"`)
       })
       .on('end', () => {
+        console.log('转换完成')
         this.emit('end', Date.now())
         this.emit('getAudioData', outputPath)
       })
-      // .save(outputPath)
+      // .output(outputPath, format='yuv4mpegpipe', pix_fmt='yuv420p', frames=None)
+      .save(outputPath)
     })
 
     
